@@ -15,8 +15,14 @@
     "@formkit/auto-animate": "0.10.0",
     "@nuxt/image": "2.1.0",
     "element-plus": ">=2",
+    "ioredis": "^6.0.0",
+    "jose": "^6.2.12",
     "nuxt": "^4.5.2",
+    "pg": "^8.23.1",
     "vue": "^3.5.43",
     "vue-router": "^5.3.1"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.0"
   }
 }
