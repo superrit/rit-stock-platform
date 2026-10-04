@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
   role                 VARCHAR(20)   NOT NULL DEFAULT 'user',  -- super_admin | user | vip
   must_change_password BOOLEAN       NOT NULL DEFAULT TRUE,    -- 首次登录强制改密
   vip_expire_at        TIMESTAMPTZ,                            -- VIP 有效期截止时间
+  remark               VARCHAR(255),                           -- 备注
   status               VARCHAR(20)   NOT NULL DEFAULT 'active',-- active | disabled
   created_at           TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
   updated_at           TIMESTAMPTZ   NOT NULL DEFAULT NOW()

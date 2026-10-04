@@ -16,8 +16,15 @@
 - 包管理器：yarn 1.22
 
 ## 数据库
-- 库名 `rit_stock_platform`，表 `users`（schema 见 `server/db/schema.sql`）。
+- 库名 `rit_stock_platform`，表 `users`（schema 见 `server/db/schema.sql`，含 `remark` 字段）。
+- 迁移：`server/db/migrations/*.sql` + `scripts/migrate.mjs`（幂等执行）。
 - 连接信息在 `.env.development`（gitignored），密码含 `#` 需引号包裹。
+
+## 用户管理
+- 管理端 API：`GET/POST /api/users`、`PATCH /api/users/:id`、`POST /api/users/:id/vip`（months=1/3/6/12）、`DELETE /api/users/:id`；仅 super_admin。
+- 服务层 `server/utils/users.ts`；`requireAdmin` 在 `server/utils/auth.ts`。
+- VIP 续期从当前到期时间续费（若仍有效）否则从现在起；`vipRemainingDays` 在 `toAuthUser` 返回。
+- 前端页：`/profile`（个人中心）、`/admin/users`（用户管理，中间件 `admin`）。
 
 ## 演示账号（默认密码=手机号后6位，首次登录改密）
 - 超级管理员 13800000000 / 普通用户 13800000001

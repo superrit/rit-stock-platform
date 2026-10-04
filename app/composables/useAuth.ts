@@ -4,6 +4,7 @@ export interface AuthUser {
   role: 'super_admin' | 'user' | 'vip'
   isVip: boolean
   vipExpireAt: string | null
+  vipRemainingDays: number | null
 }
 
 export interface LoginSuccess {

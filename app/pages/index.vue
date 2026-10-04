@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { ElMessage } from 'element-plus'
-
 definePageMeta({ middleware: 'auth', layout: 'default' })
 
-const { user, fetchMe, logout } = useAuth()
+const { user, fetchMe } = useAuth()
 
 // 兜底：确保客户端拿到最新用户信息
 onMounted(async () => {
@@ -33,19 +31,11 @@ const vipExpireText = computed(() => {
   const d = new Date(user.value.vipExpireAt)
   return d.toLocaleString('zh-CN')
 })
-
-async function onLogout() {
-  await logout()
-  ElMessage.success('已退出登录')
-}
 </script>
 
 <template>
   <div class="dashboard">
-    <header class="topbar">
-      <span class="logo">RIT 股票量化交易平台</span>
-      <el-button type="danger" plain @click="onLogout">退出登录</el-button>
-    </header>
+    <AppHeader />
 
     <main class="content">
       <el-card class="profile" shadow="hover">
@@ -74,6 +64,8 @@ async function onLogout() {
         </template>
         <ul class="todo-list">
           <li>✅ 用户登录 / 强制改密 / JWT + Redis 单设备会话</li>
+          <li>✅ 用户管理（新增 / 改备注 / VIP 续期 / 删除）</li>
+          <li>✅ 个人中心（手机号 + VIP 剩余天数）</li>
           <li>⏳ 行情数据接入（A 股实时行情）</li>
           <li>⏳ 策略回测引擎</li>
           <li>⏳ 账户 / 持仓 / 交易模块</li>
@@ -87,20 +79,6 @@ async function onLogout() {
 .dashboard {
   min-height: 100vh;
   background: #f5f7fa;
-}
-.topbar {
-  height: 60px;
-  background: #fff;
-  border-bottom: 1px solid #e5e7eb;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-}
-.logo {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1e3a8a;
 }
 .content {
   max-width: 720px;

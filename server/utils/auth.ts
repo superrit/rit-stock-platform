@@ -13,6 +13,7 @@ export interface UserRecord {
   role: string
   must_change_password: boolean
   vip_expire_at: string | null
+  remark: string | null
   status: string
   created_at: string
   updated_at: string
@@ -24,6 +25,7 @@ export interface AuthUser {
   role: Role
   isVip: boolean
   vipExpireAt: string | null
+  vipRemainingDays: number | null
 }
 
 // VIP 有效期判定：过期自动失去 VIP 身份（动态计算，无需定时任务）
@@ -37,6 +39,13 @@ export function effectiveRole(user: UserRecord): Role {
   return user.role as Role
 }
 
+// VIP 剩余天数：非 VIP 返回 null，VIP 返回向上取整的天数（最小 0）
+export function vipRemainingDays(user: UserRecord): number | null {
+  if (effectiveRole(user) !== 'vip' || !user.vip_expire_at) return null
+  const ms = new Date(user.vip_expire_at).getTime() - Date.now()
+  return Math.max(0, Math.ceil(ms / 86400000))
+}
+
 export function toAuthUser(user: UserRecord): AuthUser {
   const role = effectiveRole(user)
   return {
@@ -44,7 +53,8 @@ export function toAuthUser(user: UserRecord): AuthUser {
     phone: user.phone,
     role,
     isVip: role === 'vip',
-    vipExpireAt: user.vip_expire_at
+    vipExpireAt: user.vip_expire_at,
+    vipRemainingDays: vipRemainingDays(user)
   }
 }
 
@@ -107,6 +117,14 @@ export async function requireUser(event: H3Event): Promise<AuthUser> {
   const user = await getCurrentUser(event)
   if (!user) {
     throw createError({ statusCode: 401, statusMessage: 'Unauthorized', message: '未登录或登录已失效' })
+  }
+  return user
+}
+
+export async function requireAdmin(event: H3Event): Promise<AuthUser> {
+  const user = await requireUser(event)
+  if (user.role !== 'super_admin') {
+    throw createError({ statusCode: 403, statusMessage: 'Forbidden', message: '无权限，仅超级管理员可操作' })
   }
   return user
 }

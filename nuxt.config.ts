@@ -43,7 +43,7 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: 'RIT 股票量化交易平台',
+      title: '股票量化交易平台',
       htmlAttrs: { lang: 'zh-CN' }
     }
   },
@@ -75,7 +75,7 @@ export default defineNuxtConfig({
     passwordSalt: '',
 
     public: {
-      appName: 'RIT 股票量化交易平台'
+      appName: '股票量化交易平台'
     }
   }
 })
