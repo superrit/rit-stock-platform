@@ -14,7 +14,7 @@ async function onLogout() {
 
 <template>
   <header class="app-header">
-    <NuxtLink to="/" class="logo">RIT 股票量化交易平台</NuxtLink>
+    <NuxtLink to="/" class="logo">股票量化交易平台</NuxtLink>
 
     <nav class="nav">
       <NuxtLink to="/" class="nav-link" :class="{ active: route.path === '/' }">首页</NuxtLink>
