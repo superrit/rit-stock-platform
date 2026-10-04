@@ -91,7 +91,7 @@ function backToLogin() {
   <div class="login-page">
     <div class="login-card">
       <div class="brand">
-        <h1 class="brand-title">RIT 股票量化交易平台</h1>
+        <h1 class="brand-title">股票量化交易平台</h1>
         <p class="brand-sub">登录以进入您的量化工作台</p>
       </div>
 
