@@ -244,10 +244,13 @@ sign = MD5( ts + JSON.stringify(data) + 32位盐值 )
 | stockNumber | 股票代码，模糊匹配 | - |
 | stockName | 股票名称，模糊匹配 | - |
 | direct | 方向，精确匹配（下拉可选值由 `directs` 返回） | - |
+| period | 周期，精确匹配（如 `day`/`30min`/`60min`，可选值由 `periods` 返回） | - |
 | tacticResolveTimeFrom | 分析时间起（YYYY-MM-DD，含当天） | - |
 | tacticResolveTimeTo | 分析时间止（YYYY-MM-DD，含当天） | - |
 
-**可排序字段**：`hash / stockNumber / stockName / nextIndex / direct / price / tp / sl / pl / ratio / total / period / tacticResolveTime / BSP / JXP / analyzeScore / createdAt`
+**可排序字段**（除 JSON 文本字段外的全部字段）：`hash / udStr / stockNumber / stockName / nextIndex / direct / price / tp / sl / pl / ratio / total / period / tacticResolveTime / BSP / JXP / analyzeScore`
+
+> 注：`result / CalcCha / mustEles / scoreDetail` 为 JSON 文本字段，不支持排序。
 
 **响应示例**：
 
@@ -261,7 +264,7 @@ sign = MD5( ts + JSON.stringify(data) + 32位盐值 )
       "tacticResolveTime": "2024-01-02T16:00:00.000Z", "BSP": 9.5, "JXP": 9.4, "CalcCha": "{...}"
     }
   ],
-  "total": 6, "page": 1, "pageSize": 20, "directs": ["1", "2"]
+  "total": 6, "page": 1, "pageSize": 20, "directs": ["1", "2"], "periods": ["30min", "60min", "day"]
 }
 ```
 

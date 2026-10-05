@@ -121,7 +121,16 @@ function onPageChange(p: number) {
   fetchData()
 }
 
-const fmtTime = (s: string | null) => (s ? new Date(s).toLocaleString('zh-CN') : '-')
+// 分析时间统一显示为 yyyy-MM-dd
+const fmtDate = (s: string | null | Date | undefined) => {
+  if (!s) return '-'
+  const d = new Date(s)
+  if (Number.isNaN(d.getTime())) return '-'
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
 const fmtNum = (v: number | null | undefined) => (v == null ? '-' : v)
 
 // JSON 字段：折叠为单行紧凑文本，单元格内省略展示、悬浮看全文
@@ -213,22 +222,17 @@ onMounted(fetchData)
           <el-table-column prop="ratio" label="最终比例" width="88" sortable="custom" />
           <el-table-column prop="total" label="订单数" width="90" sortable="custom" />
           <el-table-column prop="period" label="周期" width="80" sortable="custom" />
-          <el-table-column prop="tacticResolveTime" label="分析时间" width="160" sortable="custom">
-            <template #default="{ row }">{{ fmtTime(row.tacticResolveTime) }}</template>
+          <el-table-column prop="tacticResolveTime" label="分析时间" width="110" sortable="custom">
+            <template #default="{ row }">{{ fmtDate(row.tacticResolveTime) }}</template>
           </el-table-column>
           <el-table-column prop="BSP" label="保守进场价" width="100" sortable="custom" />
           <el-table-column prop="JXP" label="极限进场价" width="100" sortable="custom" />
-          <el-table-column prop="hash" label="hash" min-width="140" sortable="custom" show-overflow-tooltip />
           <el-table-column prop="nextIndex" label="K线索引" width="90" sortable="custom" />
           <el-table-column label="统计结果(result)" min-width="160" show-overflow-tooltip>
             <template #default="{ row }">{{ compactJson(row.result) }}</template>
           </el-table-column>
           <el-table-column label="统计结果(CalcCha)" min-width="160" show-overflow-tooltip>
             <template #default="{ row }">{{ compactJson(row.CalcCha) }}</template>
-          </el-table-column>
-          <el-table-column v-if="canSeeAll" prop="udStr" label="udStr" min-width="100" sortable="custom" show-overflow-tooltip />
-          <el-table-column v-if="canSeeAll" label="统计特征(mustEles)" min-width="160" show-overflow-tooltip>
-            <template #default="{ row }">{{ compactJson(row.mustEles) }}</template>
           </el-table-column>
           <el-table-column v-if="canSeeAll" label="分数详情(scoreDetail)" min-width="160" show-overflow-tooltip>
             <template #default="{ row }">{{ compactJson(row.scoreDetail) }}</template>
