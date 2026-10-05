@@ -95,8 +95,6 @@ export async function bulkUpsertReports(items: Record<string, unknown>[], report
 
 // 允许排序的字段（camelCase → 数据库列），防止 SQL 注入（JSON 文本字段不支持排序）
 const SORTABLE: Record<string, string> = {
-  hash: 'hash',
-  udStr: 'ud_str',
   stockNumber: 'stock_number',
   stockName: 'stock_name',
   nextIndex: 'next_index',
@@ -128,10 +126,9 @@ export interface StrategyQuery {
   tacticResolveTimeTo?: string
 }
 
-// 普通用户可见字段；VIP/超管额外可见 udStr/mustEles/scoreDetail/analyzeScore
+// 字段裁剪：hash/udStr/mustEles 不对外返回；VIP/超管额外可见 scoreDetail/analyzeScore
 function toStrategyItem(row: Record<string, unknown>, role: Role): Record<string, unknown> {
   const item: Record<string, unknown> = {
-    hash: row.hash,
     stockNumber: row.stock_number,
     stockName: row.stock_name,
     nextIndex: row.next_index,
@@ -150,8 +147,6 @@ function toStrategyItem(row: Record<string, unknown>, role: Role): Record<string
     CalcCha: row.calc_cha
   }
   if (role !== 'user') {
-    item.udStr = row.ud_str
-    item.mustEles = row.must_eles
     item.scoreDetail = row.score_detail
     item.analyzeScore = row.analyze_score
   }

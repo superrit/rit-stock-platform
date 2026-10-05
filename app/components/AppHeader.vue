@@ -20,8 +20,7 @@ async function onLogout() {
     </NuxtLink>
 
     <nav class="nav">
-      <NuxtLink to="/" class="nav-link" :class="{ active: route.path === '/' }">首页</NuxtLink>
-      <NuxtLink to="/strategy" class="nav-link" :class="{ active: route.path === '/strategy' }">策略查看</NuxtLink>
+      <NuxtLink to="/" class="nav-link" :class="{ active: route.path === '/' }">策略查看</NuxtLink>
       <NuxtLink to="/profile" class="nav-link" :class="{ active: route.path === '/profile' }">个人中心</NuxtLink>
       <NuxtLink
         v-if="user?.role === 'super_admin'"

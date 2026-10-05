@@ -36,5 +36,5 @@
 - 登录记录表 `login_records`（保留6个月），VIP 操作记录表 `vip_operation_records`。
 - VIP 续期枚举：`1month/3months/6months/1year`（前端不可自由上送时长），接口 `POST /api/users/:id/vip`。
 - 接口文档：`docs/api.md`。
-- 策略查询：`GET /api/strategy/reports`（登录即可，字段按角色裁剪：普通用户 17 字段，VIP/超管多 udStr/mustEles/scoreDetail/analyzeScore），页面 `/strategy`。
+- 策略查询：`GET /api/strategy/reports`（登录即可，字段按角色裁剪：普通用户 16 字段，VIP/超管多 scoreDetail/analyzeScore；hash/udStr/mustEles 不返回），页面为首页 `/`（原 dashboard 已移除）。
 - Logo/Favicon：`public/logo.png`(512) + `public/favicon.ico`(多尺寸)；再生成用 `node scripts/build-logo.mjs <源图>`。

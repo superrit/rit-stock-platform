@@ -227,7 +227,7 @@ sign = MD5( ts + JSON.stringify(data) + 32位盐值 )
 
 ## 2.1 策略分页查询（登录用户）
 
-查询已上报的策略数据。**字段按角色裁剪**：普通用户仅返回基础字段，VIP/超级管理员返回全部字段（含 `udStr/mustEles/scoreDetail/analyzeScore`）。
+查询已上报的策略数据。**字段按角色裁剪**：普通用户仅返回基础字段，VIP/超级管理员额外返回 `scoreDetail/analyzeScore`（`hash/udStr/mustEles` 不对外返回）。
 
 - **方法**：`GET`
 - **路径**：`/api/strategy/reports`
@@ -248,9 +248,9 @@ sign = MD5( ts + JSON.stringify(data) + 32位盐值 )
 | tacticResolveTimeFrom | 分析时间起（YYYY-MM-DD，含当天） | - |
 | tacticResolveTimeTo | 分析时间止（YYYY-MM-DD，含当天） | - |
 
-**可排序字段**（除 JSON 文本字段外的全部字段）：`hash / udStr / stockNumber / stockName / nextIndex / direct / price / tp / sl / pl / ratio / total / period / tacticResolveTime / BSP / JXP / analyzeScore`
+**可排序字段**（除 JSON 文本字段外的全部返回字段）：`stockNumber / stockName / nextIndex / direct / price / tp / sl / pl / ratio / total / period / tacticResolveTime / BSP / JXP / analyzeScore`
 
-> 注：`result / CalcCha / mustEles / scoreDetail` 为 JSON 文本字段，不支持排序。
+> 注：`result / CalcCha / scoreDetail` 为 JSON 文本字段，不支持排序。
 
 **响应示例**：
 
@@ -258,7 +258,7 @@ sign = MD5( ts + JSON.stringify(data) + 32位盐值 )
 {
   "records": [
     {
-      "hash": "seedhash1", "stockNumber": "002578.SZ", "stockName": "闽发铝业",
+      "stockNumber": "002578.SZ", "stockName": "闽发铝业",
       "nextIndex": 100, "direct": "1", "price": 10, "tp": 0.5, "sl": 0.25, "pl": 0.15,
       "result": "{\"0\":40,...}", "ratio": 45, "total": 1000, "period": "day",
       "tacticResolveTime": "2024-01-02T16:00:00.000Z", "BSP": 9.5, "JXP": 9.4, "CalcCha": "{...}"
@@ -272,8 +272,9 @@ sign = MD5( ts + JSON.stringify(data) + 32位盐值 )
 
 | 字段 | 普通用户 | VIP/超管 |
 | --- | --- | --- |
-| hash/stockNumber/stockName/nextIndex/direct/price/tp/sl/pl/result/ratio/total/period/tacticResolveTime/BSP/JXP/CalcCha | ✅ | ✅ |
-| udStr/mustEles/scoreDetail/analyzeScore | ❌ | ✅ |
+| stockNumber/stockName/nextIndex/direct/price/tp/sl/pl/result/ratio/total/period/tacticResolveTime/BSP/JXP/CalcCha | ✅ | ✅ |
+| scoreDetail/analyzeScore | ❌ | ✅ |
+| hash/udStr/mustEles | ❌（不返回） | ❌（不返回） |
 
 ---
 
