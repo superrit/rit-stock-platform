@@ -46,9 +46,12 @@ onMounted(fetchData)
   <div class="page">
     <AppHeader />
     <main class="content">
-      <el-card shadow="never">
+      <el-card shadow="never" class="panel-card">
         <div class="toolbar">
-          <span class="title">登录记录（保留 6 个月）</span>
+          <div class="toolbar-title">
+            <span class="title">登录记录</span>
+            <span class="subtitle">保留 6 个月</span>
+          </div>
         </div>
 
         <el-table v-loading="loading" :data="records" border stripe>
@@ -67,7 +70,7 @@ onMounted(fetchData)
         <div class="pager">
           <el-pagination
             background
-            layout="total, prev, pager, next"
+            :layout="'total, prev, pager, next'"
             :total="total"
             :page-size="pageSize"
             :current-page="page"
@@ -82,27 +85,56 @@ onMounted(fetchData)
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f5f7fa;
+  background: var(--app-bg);
 }
 .content {
   max-width: 1080px;
-  margin: 24px auto;
-  padding: 0 16px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+}
+.panel-card {
+  border-radius: var(--app-radius);
+}
+.panel-card :deep(.el-card__body) {
+  padding: 16px;
 }
 .toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
   margin-bottom: 16px;
 }
+.toolbar-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
 .title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1f2937;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--app-text-1);
+}
+.subtitle {
+  font-size: 12px;
+  color: var(--app-text-3);
 }
 .pager {
   display: flex;
   justify-content: flex-end;
   margin-top: 16px;
+}
+@media (max-width: 768px) {
+  .content {
+    padding: 14px 10px 32px;
+  }
+  .panel-card :deep(.el-card__body) {
+    padding: 12px 10px;
+  }
+  .pager {
+    justify-content: center;
+  }
 }
 </style>

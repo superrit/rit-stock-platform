@@ -141,14 +141,17 @@ onMounted(refresh)
   <div class="page">
     <AppHeader />
     <main class="content">
-      <el-card shadow="never">
+      <el-card shadow="never" class="panel-card">
         <div class="toolbar">
-          <span class="title">用户管理</span>
+          <div class="toolbar-title">
+            <span class="title">用户管理</span>
+            <span class="subtitle">共 {{ users.length }} 个账号</span>
+          </div>
           <el-button type="primary" @click="openCreate">新增用户</el-button>
         </div>
 
         <el-table v-loading="loading" :data="users" border stripe>
-          <el-table-column prop="phone" label="手机号" width="130" />
+          <el-table-column prop="phone" label="手机号" width="130" fixed="left" />
           <el-table-column label="身份" width="120">
             <template #default="{ row }">
               <el-tag :type="roleTagType(row)" effect="dark">{{ roleLabel(row) }}</el-tag>
@@ -244,26 +247,44 @@ onMounted(refresh)
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f5f7fa;
+  background: var(--app-bg);
 }
 .content {
-  max-width: 1080px;
-  margin: 24px auto;
-  padding: 0 16px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+}
+.panel-card {
+  border-radius: var(--app-radius);
+}
+.panel-card :deep(.el-card__body) {
+  padding: 16px;
 }
 .toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
   margin-bottom: 16px;
 }
+.toolbar-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
 .title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1f2937;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--app-text-1);
+}
+.subtitle {
+  font-size: 12px;
+  color: var(--app-text-3);
 }
 .muted {
-  color: #9ca3af;
+  color: var(--app-text-3);
   font-size: 13px;
 }
 .mb {
@@ -277,6 +298,14 @@ onMounted(refresh)
 }
 .vip-label {
   font-size: 14px;
-  color: #374151;
+  color: var(--app-text-2);
+}
+@media (max-width: 768px) {
+  .content {
+    padding: 14px 10px 32px;
+  }
+  .panel-card :deep(.el-card__body) {
+    padding: 12px 10px;
+  }
 }
 </style>

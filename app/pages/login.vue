@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ElMessage } from 'element-plus'
+import { User, Lock } from '@element-plus/icons-vue'
 
 definePageMeta({ middleware: 'guest', layout: 'default' })
 
@@ -89,8 +90,14 @@ function backToLogin() {
 
 <template>
   <div class="login-page">
+    <!-- 背景装饰：网格 + 光晕 + 顶部金线 -->
+    <div class="bg-grid" aria-hidden="true"></div>
+    <div class="bg-glow bg-glow-1" aria-hidden="true"></div>
+    <div class="bg-glow bg-glow-2" aria-hidden="true"></div>
+
     <div class="login-card">
       <div class="brand">
+        <img src="/logo.png" alt="logo" class="brand-logo" />
         <h1 class="brand-title">股票量化交易平台</h1>
         <p class="brand-sub">登录以进入您的量化工作台</p>
       </div>
@@ -105,7 +112,14 @@ function backToLogin() {
         @submit.prevent="onLogin"
       >
         <el-form-item label="手机号" prop="phone">
-          <el-input v-model="loginForm.phone" placeholder="请输入手机号" maxlength="11" clearable />
+          <el-input
+            v-model="loginForm.phone"
+            placeholder="请输入手机号"
+            maxlength="11"
+            clearable
+            :prefix-icon="User"
+            inputmode="numeric"
+          />
         </el-form-item>
         <el-form-item label="密码" prop="password">
           <el-input
@@ -113,6 +127,7 @@ function backToLogin() {
             type="password"
             placeholder="请输入密码（首次登录为手机号后 6 位）"
             show-password
+            :prefix-icon="Lock"
             @keyup.enter="onLogin"
           />
         </el-form-item>
@@ -149,6 +164,7 @@ function backToLogin() {
             type="password"
             placeholder="请输入原密码"
             show-password
+            :prefix-icon="Lock"
           />
         </el-form-item>
         <el-form-item label="新密码" prop="newPassword">
@@ -157,6 +173,7 @@ function backToLogin() {
             type="password"
             placeholder="6-20 位新密码"
             show-password
+            :prefix-icon="Lock"
           />
         </el-form-item>
         <el-form-item label="确认新密码" prop="confirmPassword">
@@ -165,6 +182,7 @@ function backToLogin() {
             type="password"
             placeholder="再次输入新密码"
             show-password
+            :prefix-icon="Lock"
             @keyup.enter="onChangePassword"
           />
         </el-form-item>
@@ -185,43 +203,133 @@ function backToLogin() {
 
 <style scoped>
 .login-page {
+  position: relative;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%);
+  background: var(--app-bg);
   padding: 24px;
+  overflow: hidden;
 }
+
+/* 网格底纹（金融图表意象） */
+.bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 45%, #000 25%, transparent 78%);
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 45%, #000 25%, transparent 78%);
+  pointer-events: none;
+}
+
+/* 金色光晕 */
+.bg-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  pointer-events: none;
+}
+.bg-glow-1 {
+  width: 560px;
+  height: 560px;
+  top: -220px;
+  right: -140px;
+  background: rgba(230, 172, 0, 0.09);
+}
+.bg-glow-2 {
+  width: 480px;
+  height: 480px;
+  bottom: -200px;
+  left: -160px;
+  background: rgba(230, 172, 0, 0.06);
+}
+
 .login-card {
-  width: 400px;
-  background: #fff;
-  border-radius: 16px;
-  padding: 36px 32px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  position: relative;
+  width: 100%;
+  max-width: 410px;
+  background: rgba(19, 23, 34, 0.88);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--app-border);
+  border-radius: 18px;
+  padding: 40px 34px 32px;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.55);
 }
+/* 卡片顶部金色渐变线 */
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--app-gold), transparent);
+}
+
 .brand {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
+}
+.brand-logo {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  border-radius: 14px;
+  box-shadow: 0 6px 24px rgba(230, 172, 0, 0.25);
+  margin-bottom: 14px;
 }
 .brand-title {
-  font-size: 20px;
-  color: #1f2937;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   margin: 0 0 8px;
+  background: linear-gradient(120deg, #ffd75e 0%, var(--app-gold) 55%, #c99400 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 .brand-sub {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--app-text-3);
   margin: 0;
 }
+
 .submit-btn {
   width: 100%;
-  margin-top: 8px;
+  margin-top: 10px;
+  font-weight: 700;
+  letter-spacing: 0.35em;
+  text-indent: 0.35em;
 }
 .back-btn {
   width: 100%;
-  margin-top: 4px;
+  margin-top: 6px;
+  margin-left: 0;
 }
 .mb {
   margin-bottom: 16px;
+}
+
+/* 移动端 */
+@media (max-width: 480px) {
+  .login-page {
+    padding: 16px;
+    align-items: flex-start;
+    padding-top: 10vh;
+  }
+  .login-card {
+    padding: 32px 22px 24px;
+    border-radius: 16px;
+  }
+  .submit-btn {
+    letter-spacing: 0.25em;
+    text-indent: 0.25em;
+  }
 }
 </style>

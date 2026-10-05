@@ -46,10 +46,16 @@ export default defineNuxtConfig({
     '@formkit/auto-animate'
   ],
 
+  // 深色主题：Element Plus 官方暗色变量（基础）+ 项目自定义金色主题覆盖
+  css: [
+    'element-plus/theme-chalk/dark/css-vars.css',
+    '~/assets/css/theme.css'
+  ],
+
   app: {
     head: {
       title: '股票量化交易平台',
-      htmlAttrs: { lang: 'zh-CN' },
+      htmlAttrs: { lang: 'zh-CN', class: 'dark' },
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
         { rel: 'icon', type: 'image/png', href: '/logo.png' },

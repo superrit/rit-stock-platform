@@ -37,3 +37,10 @@
 - 接口文档：`docs/api.md`。
 - 策略查询：`GET /api/strategy/reports`（登录即可，字段按角色裁剪：普通用户 16 字段，VIP/超管多 scoreDetail/analyzeScore；hash/udStr/mustEles 不返回），页面为首页 `/`（原 dashboard 已移除）。
 - Logo/Favicon：`public/logo.png`(512) + `public/favicon.ico`(多尺寸)；再生成用 `node scripts/build-logo.mjs <源图>`。
+
+## 前端主题约定（2026-10-06 重构后）
+- 深色金色主题：主题色 #E6AC00，页面底 #0b0e14，卡片 #131722，边框 #232836。
+- 主题文件 `app/assets/css/theme.css`：定义 `--app-*` 设计 Token + 覆盖 Element Plus 暗色变量（element-plus dark css-vars 在 nuxt.config css 数组中先于它加载）；`html.dark` 由 nuxt.config htmlAttrs 挂载。
+- 涨/买入=红(--app-up #f05656)、跌/卖出=绿(--app-down #2ebd85)，中国股市约定；金色实底按钮文字用深色(#171205)。
+- 响应式断点 768px：AppHeader 移动端为抽屉导航；策略页移动端为卡片视图（CSS 媒体查询切换双视图，非 JS v-if，避免 hydration 问题）；筛选栏移动端可折叠。
+- 策略表格 JSON 字段(result/CalcCha/scoreDetail)在行展开详情 `components/StrategyDetail.vue` 中以键值徽章展示，不在表格平铺。

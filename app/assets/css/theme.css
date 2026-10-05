@@ -1,0 +1,293 @@
+/* ==========================================================================
+   全局深色主题 · 金色 #E6AC00
+   依赖：element-plus/theme-chalk/dark/css-vars.css（先加载官方暗色基础变量，
+   本文件在其之后加载并覆盖品牌色、背景、边框、文字与关键组件变量）
+   ========================================================================== */
+
+/* ---------- 设计 Token（项目自有变量，组件内直接引用） ---------- */
+:root {
+  --app-bg: #0b0e14;            /* 页面底色 */
+  --app-surface: #131722;       /* 卡片 / 表格 */
+  --app-surface-2: #1a2030;     /* 悬浮层 / 次级卡片 */
+  --app-surface-3: #212840;     /* 更亮的表面 */
+  --app-border: #232836;        /* 常规边框 */
+  --app-border-light: #1b2029;  /* 弱边框 */
+  --app-text-1: #e9ecf2;        /* 主文字 */
+  --app-text-2: #a6aec0;        /* 次要文字 */
+  --app-text-3: #6b7488;        /* 弱文字 */
+  --app-gold: #e6ac00;          /* 主题金 */
+  --app-gold-strong: #ffc733;   /* 亮金（hover/强调） */
+  --app-gold-soft: rgba(230, 172, 0, 0.12);   /* 金色软底 */
+  --app-up: #f05656;            /* 涨 / 买入（红） */
+  --app-up-soft: rgba(240, 86, 86, 0.14);
+  --app-down: #2ebd85;          /* 跌 / 卖出（绿） */
+  --app-down-soft: rgba(46, 189, 133, 0.14);
+  --app-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --app-radius: 12px;
+}
+
+/* ---------- Element Plus 变量覆盖（暗色模式） ---------- */
+html.dark {
+  color-scheme: dark;
+
+  /* 品牌色：金 */
+  --el-color-primary: #e6ac00;
+  --el-color-primary-light-3: #b8891c;
+  --el-color-primary-light-5: #735510;
+  --el-color-primary-light-7: #4a3809;
+  --el-color-primary-light-8: #362906;
+  --el-color-primary-light-9: #221a04;
+  --el-color-primary-dark-2: #ffc733;
+
+  /* 功能色（适配深色背景的亮色版本） */
+  --el-color-success: #2ebd85;
+  --el-color-success-light-3: #24986d;
+  --el-color-success-light-5: #175c40;
+  --el-color-success-light-7: #103d2b;
+  --el-color-success-light-8: #0c2d20;
+  --el-color-success-light-9: #081c15;
+  --el-color-success-dark-2: #55cfa0;
+
+  --el-color-warning: #e6ac00;
+  --el-color-warning-light-3: #b8891c;
+  --el-color-warning-light-5: #735510;
+  --el-color-warning-light-7: #4a3809;
+  --el-color-warning-light-8: #362906;
+  --el-color-warning-light-9: #221a04;
+  --el-color-warning-dark-2: #ffc733;
+
+  --el-color-danger: #f05656;
+  --el-color-danger-light-3: #c04545;
+  --el-color-danger-light-5: #782b2b;
+  --el-color-danger-light-7: #501d1d;
+  --el-color-danger-light-8: #3b1616;
+  --el-color-danger-light-9: #261010;
+  --el-color-danger-dark-2: #f37878;
+
+  --el-color-error: #f05656;
+  --el-color-error-light-3: #c04545;
+  --el-color-error-light-5: #782b2b;
+  --el-color-error-light-7: #501d1d;
+  --el-color-error-light-8: #3b1616;
+  --el-color-error-light-9: #261010;
+  --el-color-error-dark-2: #f37878;
+
+  --el-color-info: #909399;
+  --el-color-info-light-3: #737679;
+  --el-color-info-light-5: #484a4d;
+  --el-color-info-light-7: #303133;
+  --el-color-info-light-8: #242527;
+  --el-color-info-light-9: #1b1c1d;
+  --el-color-info-dark-2: #a6a9ad;
+
+  /* 背景 */
+  --el-bg-color: #131722;
+  --el-bg-color-overlay: #1a2030;
+  --el-bg-color-page: #0b0e14;
+
+  /* 填充 */
+  --el-fill-color: #202634;
+  --el-fill-color-light: #1a1f2c;
+  --el-fill-color-lighter: #171b26;
+  --el-fill-color-extra-light: #1e2431;
+  --el-fill-color-dark: #232a3a;
+  --el-fill-color-darker: #262e40;
+  --el-fill-color-blank: #131722;
+
+  /* 边框 */
+  --el-border-color: #2a3040;
+  --el-border-color-light: #232836;
+  --el-border-color-lighter: #1e2330;
+  --el-border-color-extra-light: #1a1f2a;
+  --el-border-color-dark: #333b4e;
+  --el-border-color-darker: #3b445a;
+
+  /* 文字 */
+  --el-text-color-primary: #e9ecf2;
+  --el-text-color-regular: #c0c6d4;
+  --el-text-color-secondary: #a6aec0;
+  --el-text-color-placeholder: #6b7488;
+  --el-text-color-disabled: #565e6e;
+
+  /* 表格 */
+  --el-table-border-color: #1e2330;
+  --el-table-header-bg-color: #10141d;
+  --el-table-header-text-color: #a6aec0;
+  --el-table-tr-bg-color: #131722;
+  --el-table-row-hover-bg-color: #1a2030;
+  --el-table-expanded-cell-bg-color: #10141d;
+  --el-table-fixed-box-shadow: -8px 0 12px rgba(0, 0, 0, 0.35);
+
+  /* 分页 */
+  --el-pagination-bg-color: transparent;
+  --el-pagination-button-bg-color: #1e2431;
+  --el-pagination-hover-color: var(--app-gold-strong);
+
+  /* 弹层 */
+  --el-dialog-bg-color: #1a2030;
+  --el-drawer-bg-color: #131722;
+  --el-message-box-bg-color: #1a2030;
+  --el-popper-border-color: #2a3040;
+
+  /* 卡片 */
+  --el-card-border-color: #232836;
+  --el-card-bg-color: #131722;
+}
+
+/* ---------- 全局基础 ---------- */
+html,
+body {
+  background: var(--app-bg);
+  color: var(--app-text-1);
+}
+
+body {
+  margin: 0;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* 数字等宽，金融数据对齐 */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* 滚动条 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a3040 transparent;
+}
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a3040;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3a4356;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* 键盘可达性：金色焦点环 */
+:focus-visible {
+  outline: 2px solid rgba(230, 172, 0, 0.65);
+  outline-offset: 2px;
+}
+
+/* ---------- Element Plus 组件微调 ---------- */
+
+/* 实心主按钮：金色底配深色文字（对比更清晰） */
+html.dark .el-button--primary:not(.is-link):not(.is-text):not(.is-plain) {
+  --el-button-text-color: #171205;
+  --el-button-hover-text-color: #171205;
+  --el-button-active-text-color: #171205;
+  --el-button-hover-bg-color: var(--app-gold-strong);
+  --el-button-hover-border-color: var(--app-gold-strong);
+  --el-button-active-bg-color: #e6ac00;
+}
+
+/* 金色实底 Tag / 徽章类文字用深色（金底白字对比不足） */
+html.dark .el-tag.el-tag--warning.el-tag--dark {
+  color: #171205;
+}
+html.dark .el-message-box .el-button--primary,
+html.dark .el-dialog .el-button--primary {
+  font-weight: 600;
+}
+
+/* 卡片 */
+html.dark .el-card {
+  border-radius: var(--app-radius);
+  box-shadow: none;
+}
+
+/* 表头加粗大写氛围 */
+html.dark .el-table th.el-table__cell {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+html.dark .el-table .el-table__expanded-cell {
+  padding: 16px 16px 24px;
+}
+html.dark .el-table .el-table__placeholder {
+  background: transparent;
+}
+
+/* 弹窗 / 抽屉 / 确认框 */
+html.dark .el-dialog {
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius);
+}
+html.dark .el-message-box {
+  border: 1px solid var(--app-border);
+}
+html.dark .el-drawer {
+  border-left: 1px solid var(--app-border);
+}
+
+/* 加载遮罩更贴合深色 */
+html.dark .el-loading-mask {
+  background-color: rgba(11, 14, 20, 0.72);
+}
+html.dark .el-loading-spinner .path {
+  stroke: var(--app-gold);
+}
+
+/* 下拉 / 弹出层边框 */
+html.dark .el-select__popper.el-popper,
+html.dark .el-picker__popper.el-popper,
+html.dark .el-dropdown__popper.el-popper {
+  border: 1px solid var(--app-border);
+}
+
+/* 输入框 focus 光晕（金色） */
+html.dark .el-input__wrapper:focus-within,
+html.dark .el-textarea__inner:focus {
+  box-shadow: 0 0 0 1px var(--app-gold) inset !important;
+}
+
+/* 分页数字按钮 */
+html.dark .el-pagination.is-background .el-pager li {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 消息提示圆角 */
+html.dark .el-message {
+  border-radius: 10px;
+}
+
+/* 移动端：日期/下拉弹层宽度收缩 */
+@media (max-width: 768px) {
+  html.dark .el-select__popper.el-popper {
+    max-width: 92vw;
+  }
+  /* 弹窗小屏自适应，避免溢出 */
+  html.dark .el-dialog {
+    width: 92vw !important;
+    max-width: 480px;
+    margin: 8vh auto !important;
+  }
+  html.dark .el-message-box {
+    width: 88vw !important;
+    max-width: 420px;
+  }
+  /* 表格小字号 + 紧凑行高 */
+  html.dark .el-table {
+    font-size: 12.5px;
+  }
+  html.dark .el-table .cell {
+    padding: 0 8px;
+  }
+}
