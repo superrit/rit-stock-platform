@@ -37,14 +37,19 @@ const total = ref(0)
 const page = ref(1)
 const pageSize = ref(20)
 const directs = ref<string[]>([])
+const periods = ref<string[]>([])
 
-// 筛选条件
+// 筛选条件（周期默认 day）
 const filters = reactive({
   stockNumber: '',
   stockName: '',
   direct: '',
+  period: 'day',
   dateRange: null as [string, string] | null
 })
+
+// 周期下拉选项（确保 day 始终存在）
+const periodOptions = computed(() => Array.from(new Set(['day', ...periods.value])))
 
 // 排序（服务端排序）
 const sortBy = ref('tacticResolveTime')
@@ -59,6 +64,7 @@ function buildQueryUrl() {
   if (filters.stockNumber) p.set('stockNumber', filters.stockNumber)
   if (filters.stockName) p.set('stockName', filters.stockName)
   if (filters.direct) p.set('direct', filters.direct)
+  if (filters.period) p.set('period', filters.period)
   if (filters.dateRange?.[0]) p.set('tacticResolveTimeFrom', filters.dateRange[0])
   if (filters.dateRange?.[1]) p.set('tacticResolveTimeTo', filters.dateRange[1])
   return `/api/strategy/reports?${p.toString()}`
@@ -71,10 +77,12 @@ async function fetchData() {
       records: StrategyItem[]
       total: number
       directs: string[]
+      periods: string[]
     }>(buildQueryUrl())
     records.value = data.records
     total.value = data.total
     if (data.directs?.length) directs.value = data.directs
+    if (data.periods?.length) periods.value = data.periods
   } catch (err: any) {
     ElMessage.error(err?.data?.message || '加载策略数据失败')
   } finally {
@@ -91,6 +99,7 @@ function onReset() {
   filters.stockNumber = ''
   filters.stockName = ''
   filters.direct = ''
+  filters.period = 'day'
   filters.dateRange = null
   onSearch()
 }
@@ -115,32 +124,15 @@ function onPageChange(p: number) {
 const fmtTime = (s: string | null) => (s ? new Date(s).toLocaleString('zh-CN') : '-')
 const fmtNum = (v: number | null | undefined) => (v == null ? '-' : v)
 
-// JSON 字段美化展示
-function prettyJson(s: string | null | undefined): string {
+// JSON 字段：折叠为单行紧凑文本，单元格内省略展示、悬浮看全文
+function compactJson(s: string | null | undefined): string {
   if (!s) return '-'
   try {
-    return JSON.stringify(JSON.parse(s), null, 2)
+    return JSON.stringify(JSON.parse(s))
   } catch {
     return s
   }
 }
-
-const detailFields = computed(() => {
-  const base: Array<{ label: string; get: (r: StrategyItem) => string }> = [
-    { label: 'hash', get: (r) => r.hash },
-    { label: 'result（统计结果）', get: (r) => prettyJson(r.result) },
-    { label: 'CalcCha（统计结果）', get: (r) => prettyJson(r.CalcCha) }
-  ]
-  if (canSeeAll.value) {
-    base.push(
-      { label: 'udStr', get: (r) => r.udStr || '-' },
-      { label: 'mustEles（统计特征）', get: (r) => prettyJson(r.mustEles) },
-      { label: 'scoreDetail（分数详情）', get: (r) => prettyJson(r.scoreDetail) },
-      { label: 'analyzeScore（分析分数）', get: (r) => fmtNum(r.analyzeScore) }
-    )
-  }
-  return base
-})
 
 onMounted(fetchData)
 </script>
@@ -163,7 +155,7 @@ onMounted(fetchData)
               v-model="filters.stockNumber"
               placeholder="如 002578"
               clearable
-              style="width: 150px"
+              style="width: 140px"
               @keyup.enter="onSearch"
             />
           </el-form-item>
@@ -172,18 +164,18 @@ onMounted(fetchData)
               v-model="filters.stockName"
               placeholder="名称关键词"
               clearable
-              style="width: 150px"
+              style="width: 140px"
               @keyup.enter="onSearch"
             />
           </el-form-item>
           <el-form-item label="方向">
-            <el-select
-              v-model="filters.direct"
-              placeholder="全部"
-              clearable
-              style="width: 110px"
-            >
+            <el-select v-model="filters.direct" placeholder="全部" clearable style="width: 100px">
               <el-option v-for="d in directs" :key="d" :label="d" :value="d" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="周期">
+            <el-select v-model="filters.period" placeholder="全部" clearable style="width: 110px">
+              <el-option v-for="pd in periodOptions" :key="pd" :label="pd" :value="pd" />
             </el-select>
           </el-form-item>
           <el-form-item label="分析时间">
@@ -203,7 +195,7 @@ onMounted(fetchData)
           </el-form-item>
         </el-form>
 
-        <!-- 数据表（点击列头排序） -->
+        <!-- 数据表：全部字段平铺，非 JSON 字段可点击列头排序 -->
         <el-table
           v-loading="loading"
           :data="records"
@@ -211,30 +203,37 @@ onMounted(fetchData)
           stripe
           @sort-change="onSortChange"
         >
-          <el-table-column type="expand">
-            <template #default="{ row }">
-              <el-descriptions :column="1" border class="detail">
-                <el-descriptions-item v-for="f in detailFields" :key="f.label" :label="f.label">
-                  <span class="mono">{{ f.get(row) }}</span>
-                </el-descriptions-item>
-              </el-descriptions>
-            </template>
-          </el-table-column>
-          <el-table-column prop="stockNumber" label="股票代码" width="110" sortable="custom" />
-          <el-table-column prop="stockName" label="股票名称" min-width="100" sortable="custom" />
-          <el-table-column prop="direct" label="方向" width="70" sortable="custom" />
-          <el-table-column prop="price" label="开仓价" width="85" sortable="custom" />
-          <el-table-column prop="tp" label="止盈" width="80" sortable="custom" />
-          <el-table-column prop="sl" label="止损" width="80" sortable="custom" />
-          <el-table-column prop="pl" label="平保" width="80" sortable="custom" />
-          <el-table-column prop="ratio" label="最终比例" width="90" sortable="custom" />
-          <el-table-column prop="total" label="订单数" width="95" sortable="custom" />
-          <el-table-column prop="period" label="周期" width="75" sortable="custom" />
-          <el-table-column label="分析时间" width="165" sortable="custom" prop="tacticResolveTime">
+          <el-table-column prop="stockNumber" label="股票代码" width="110" sortable="custom" fixed="left" />
+          <el-table-column prop="stockName" label="股票名称" min-width="90" sortable="custom" show-overflow-tooltip />
+          <el-table-column prop="direct" label="方向" width="66" sortable="custom" />
+          <el-table-column prop="price" label="开仓价" width="82" sortable="custom" />
+          <el-table-column prop="tp" label="止盈" width="76" sortable="custom" />
+          <el-table-column prop="sl" label="止损" width="76" sortable="custom" />
+          <el-table-column prop="pl" label="平保" width="76" sortable="custom" />
+          <el-table-column prop="ratio" label="最终比例" width="88" sortable="custom" />
+          <el-table-column prop="total" label="订单数" width="90" sortable="custom" />
+          <el-table-column prop="period" label="周期" width="80" sortable="custom" />
+          <el-table-column prop="tacticResolveTime" label="分析时间" width="160" sortable="custom">
             <template #default="{ row }">{{ fmtTime(row.tacticResolveTime) }}</template>
           </el-table-column>
           <el-table-column prop="BSP" label="保守进场价" width="100" sortable="custom" />
           <el-table-column prop="JXP" label="极限进场价" width="100" sortable="custom" />
+          <el-table-column prop="hash" label="hash" min-width="140" sortable="custom" show-overflow-tooltip />
+          <el-table-column prop="nextIndex" label="K线索引" width="90" sortable="custom" />
+          <el-table-column label="统计结果(result)" min-width="160" show-overflow-tooltip>
+            <template #default="{ row }">{{ compactJson(row.result) }}</template>
+          </el-table-column>
+          <el-table-column label="统计结果(CalcCha)" min-width="160" show-overflow-tooltip>
+            <template #default="{ row }">{{ compactJson(row.CalcCha) }}</template>
+          </el-table-column>
+          <el-table-column v-if="canSeeAll" prop="udStr" label="udStr" min-width="100" sortable="custom" show-overflow-tooltip />
+          <el-table-column v-if="canSeeAll" label="统计特征(mustEles)" min-width="160" show-overflow-tooltip>
+            <template #default="{ row }">{{ compactJson(row.mustEles) }}</template>
+          </el-table-column>
+          <el-table-column v-if="canSeeAll" label="分数详情(scoreDetail)" min-width="160" show-overflow-tooltip>
+            <template #default="{ row }">{{ compactJson(row.scoreDetail) }}</template>
+          </el-table-column>
+          <el-table-column v-if="canSeeAll" prop="analyzeScore" label="分析分数" width="90" sortable="custom" />
         </el-table>
 
         <div class="pager">
@@ -260,7 +259,7 @@ onMounted(fetchData)
   background: #f5f7fa;
 }
 .content {
-  max-width: 1280px;
+  max-width: 1560px;
   margin: 24px auto;
   padding: 0 16px;
 }
@@ -282,14 +281,5 @@ onMounted(fetchData)
   display: flex;
   justify-content: flex-end;
   margin-top: 16px;
-}
-.detail {
-  margin: 8px 12px;
-}
-.mono {
-  font-family: Consolas, Monaco, monospace;
-  font-size: 12px;
-  white-space: pre-wrap;
-  word-break: break-all;
 }
 </style>

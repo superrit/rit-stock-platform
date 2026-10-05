@@ -93,9 +93,10 @@ export async function bulkUpsertReports(items: Record<string, unknown>[], report
 
 // ============ 策略查询（分页/排序/筛选 + 按角色裁剪字段） ============
 
-// 允许排序的字段（camelCase → 数据库列），防止 SQL 注入
+// 允许排序的字段（camelCase → 数据库列），防止 SQL 注入（JSON 文本字段不支持排序）
 const SORTABLE: Record<string, string> = {
   hash: 'hash',
+  udStr: 'ud_str',
   stockNumber: 'stock_number',
   stockName: 'stock_name',
   nextIndex: 'next_index',
@@ -122,6 +123,7 @@ export interface StrategyQuery {
   stockNumber?: string
   stockName?: string
   direct?: string
+  period?: string
   tacticResolveTimeFrom?: string
   tacticResolveTimeTo?: string
 }
@@ -172,6 +174,10 @@ export async function listReports(q: StrategyQuery, role: Role) {
     whereParams.push(q.direct)
     conditions.push('direct = $' + whereParams.length)
   }
+  if (q.period) {
+    whereParams.push(q.period)
+    conditions.push('period = $' + whereParams.length)
+  }
   if (q.tacticResolveTimeFrom) {
     whereParams.push(q.tacticResolveTimeFrom)
     conditions.push('tactic_resolve_time >= ($' + whereParams.length + ')::date')
@@ -215,4 +221,12 @@ export async function listDirects(): Promise<string[]> {
     'SELECT DISTINCT direct FROM strategy_reports WHERE direct IS NOT NULL ORDER BY direct ASC'
   )
   return rows.map((r) => r.direct)
+}
+
+// period 字段可选值（用于周期筛选下拉）
+export async function listPeriods(): Promise<string[]> {
+  const rows = await query<{ period: string }>(
+    'SELECT DISTINCT period FROM strategy_reports WHERE period IS NOT NULL ORDER BY period ASC'
+  )
+  return rows.map((r) => r.period)
 }

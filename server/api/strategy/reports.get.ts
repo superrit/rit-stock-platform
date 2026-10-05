@@ -1,5 +1,5 @@
 import { requireUser } from '../../utils/auth'
-import { listReports, listDirects } from '../../utils/strategy-reports'
+import { listReports, listDirects, listPeriods } from '../../utils/strategy-reports'
 
 // GET /api/strategy/reports —— 策略分页查询（登录即可，字段按角色裁剪）
 export default defineEventHandler(async (event) => {
@@ -18,6 +18,7 @@ export default defineEventHandler(async (event) => {
       stockNumber: q?.stockNumber ? String(q.stockNumber).trim() : undefined,
       stockName: q?.stockName ? String(q.stockName).trim() : undefined,
       direct: q?.direct ? String(q.direct).trim() : undefined,
+      period: q?.period ? String(q.period).trim() : undefined,
       tacticResolveTimeFrom: q?.tacticResolveTimeFrom ? String(q.tacticResolveTimeFrom) : undefined,
       tacticResolveTimeTo: q?.tacticResolveTimeTo ? String(q.tacticResolveTimeTo) : undefined
     },
@@ -25,5 +26,6 @@ export default defineEventHandler(async (event) => {
   )
 
   const directs = await listDirects()
-  return { ...result, directs }
+  const periods = await listPeriods()
+  return { ...result, directs, periods }
 })
