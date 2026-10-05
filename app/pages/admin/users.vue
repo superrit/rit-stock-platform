@@ -6,6 +6,7 @@ import type { AdminUser } from '~/composables/useAdminUsers'
 definePageMeta({ middleware: 'admin', layout: 'default' })
 
 const { list, create, updateRemark, extendVip, remove } = useAdminUsers()
+const { user } = useAuth()
 
 const loading = ref(false)
 const users = ref<AdminUser[]>([])
@@ -110,6 +111,11 @@ async function onExtendVip(u: AdminUser, label: string, duration: string) {
 }
 
 async function onDelete(u: AdminUser) {
+  // 不能删除自己
+  if (u.id === user.value?.id) {
+    ElMessage.warning('不能删除自己的账户')
+    return
+  }
   try {
     await ElMessageBox.confirm(
       `确认删除用户 ${u.phone}？此操作不可恢复。`,
@@ -169,7 +175,14 @@ onMounted(refresh)
           <el-table-column label="操作" width="160" fixed="right">
             <template #default="{ row }">
               <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
-              <el-button link type="danger" @click="onDelete(row)">删除</el-button>
+              <el-button
+                link
+                type="danger"
+                :disabled="row.id === user?.id"
+                @click="onDelete(row)"
+              >
+                删除
+              </el-button>
             </template>
           </el-table-column>
         </el-table>

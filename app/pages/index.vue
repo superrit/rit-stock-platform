@@ -58,8 +58,13 @@ function defaultSort() {
 const sortBy = ref(defaultSort().by)
 const sortOrder = ref<'asc' | 'desc'>(defaultSort().order)
 
-// 分析时间默认选中是否已初始化（仅首次加载时默认选最新）
-let datesInitialized = false
+// 应用默认筛选：最新分析时间 + 默认排序
+function applyDefaultFilters() {
+  const d = defaultSort()
+  sortBy.value = d.by
+  sortOrder.value = d.order
+  filters.dates = dates.value.length ? [dates.value[dates.value.length - 1]] : []
+}
 
 function buildQueryUrl() {
   const p = new URLSearchParams()
@@ -89,18 +94,23 @@ async function fetchData() {
     total.value = data.total
     if (data.directs?.length) directs.value = data.directs
     if (data.periods?.length) periods.value = data.periods
-    if (data.dates?.length) {
-      dates.value = data.dates
-      // 首次加载默认选中最后上报（最新）的分析时间
-      if (!datesInitialized) {
-        datesInitialized = true
-        filters.dates = [data.dates[data.dates.length - 1]]
-      }
-    }
+    if (data.dates?.length) dates.value = data.dates
+    return data
   } catch (err: any) {
     ElMessage.error(err?.data?.message || '加载策略数据失败')
+    return null
   } finally {
     loading.value = false
+  }
+}
+
+// 首次进入：先拉可选日期，默认选中最新日期后带条件重新查询
+async function initialLoad() {
+  const data = await fetchData()
+  if (data?.dates?.length) {
+    dates.value = data.dates
+    applyDefaultFilters()
+    await fetchData()
   }
 }
 
@@ -115,11 +125,7 @@ function onReset() {
   filters.direct = ''
   filters.period = 'day'
   // 恢复默认排序 + 默认分析时间
-  const d = defaultSort()
-  sortBy.value = d.by
-  sortOrder.value = d.order
-  datesInitialized = false
-  filters.dates = []
+  applyDefaultFilters()
   page.value = 1
   fetchData()
 }
@@ -154,6 +160,14 @@ const fmtDate = (s: string | null | Date | undefined) => {
 }
 const fmtNum = (v: number | null | undefined) => (v == null ? '-' : v)
 
+// 方向枚举：1 买 / 0 卖
+const directLabel = (v: string | null | undefined) => {
+  const s = String(v ?? '')
+  if (s === '1') return '买'
+  if (s === '0') return '卖'
+  return s || '-'
+}
+
 // JSON 字段：折叠为单行紧凑文本，单元格内省略展示、悬浮看全文
 function compactJson(s: string | null | undefined): string {
   if (!s) return '-'
@@ -164,7 +178,7 @@ function compactJson(s: string | null | undefined): string {
   }
 }
 
-onMounted(fetchData)
+onMounted(initialLoad)
 </script>
 
 <template>
@@ -190,7 +204,7 @@ onMounted(fetchData)
           </el-form-item>
           <el-form-item label="方向">
             <el-select v-model="filters.direct" placeholder="全部" clearable style="width: 100px">
-              <el-option v-for="d in directs" :key="d" :label="d" :value="d" />
+              <el-option v-for="d in directs" :key="d" :label="directLabel(d)" :value="d" />
             </el-select>
           </el-form-item>
           <el-form-item label="周期">
@@ -219,7 +233,9 @@ onMounted(fetchData)
             <template #default="{ row }">{{ fmtDate(row.tacticResolveTime) }}</template>
           </el-table-column>
           <el-table-column v-if="canSeeAll" prop="analyzeScore" label="分析分数" width="90" sortable="custom" />
-          <el-table-column prop="direct" label="方向" width="66" sortable="custom" />
+          <el-table-column prop="direct" label="方向" width="66" sortable="custom">
+            <template #default="{ row }">{{ directLabel(row.direct) }}</template>
+          </el-table-column>
           <el-table-column prop="price" label="开仓价" width="82" sortable="custom" />
           <el-table-column prop="tp" label="止盈" width="76" sortable="custom" />
           <el-table-column prop="sl" label="止损" width="76" sortable="custom" />
