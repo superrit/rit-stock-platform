@@ -179,12 +179,6 @@ function backToLogin() {
         </el-button>
         <el-button text class="back-btn" @click="backToLogin">返回登录</el-button>
       </el-form>
-
-      <div class="hint">
-        <p>演示账号（默认密码 = 手机号后 6 位，首次登录需改密）：</p>
-        <p>超级管理员 13800000000 · 普通用户 13800000001</p>
-        <p>VIP 用户 13800000002 · 过期 VIP 13800000003</p>
-      </div>
     </div>
   </div>
 </template>
@@ -229,14 +223,5 @@ function backToLogin() {
 }
 .mb {
   margin-bottom: 16px;
-}
-.hint {
-  margin-top: 20px;
-  font-size: 12px;
-  color: #9ca3af;
-  line-height: 1.7;
-}
-.hint p {
-  margin: 2px 0;
 }
 </style>

@@ -122,8 +122,7 @@ export interface StrategyQuery {
   stockName?: string
   direct?: string
   period?: string
-  tacticResolveTimeFrom?: string
-  tacticResolveTimeTo?: string
+  tacticResolveTimes?: string[]  // 分析时间（yyyy-MM-dd，可多选）
 }
 
 // 字段裁剪：hash/udStr/mustEles 不对外返回；VIP/超管额外可见 scoreDetail/analyzeScore
@@ -173,13 +172,12 @@ export async function listReports(q: StrategyQuery, role: Role) {
     whereParams.push(q.period)
     conditions.push('period = $' + whereParams.length)
   }
-  if (q.tacticResolveTimeFrom) {
-    whereParams.push(q.tacticResolveTimeFrom)
-    conditions.push('tactic_resolve_time >= ($' + whereParams.length + ')::date')
-  }
-  if (q.tacticResolveTimeTo) {
-    whereParams.push(q.tacticResolveTimeTo)
-    conditions.push("tactic_resolve_time < ($" + whereParams.length + ")::date + INTERVAL '1 day'")
+  // 分析时间：按中国时区(Asia/Shanghai)取日期，支持多选
+  if (q.tacticResolveTimes && q.tacticResolveTimes.length > 0) {
+    whereParams.push(q.tacticResolveTimes)
+    conditions.push(
+      "(tactic_resolve_time AT TIME ZONE 'Asia/Shanghai')::date = ANY($" + whereParams.length + '::date[])'
+    )
   }
 
   const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : ''
@@ -224,4 +222,13 @@ export async function listPeriods(): Promise<string[]> {
     'SELECT DISTINCT period FROM strategy_reports WHERE period IS NOT NULL ORDER BY period ASC'
   )
   return rows.map((r) => r.period)
+}
+
+// 分析时间可选值（中国时区 yyyy-MM-dd，升序，供多选筛选）
+export async function listDates(): Promise<string[]> {
+  const rows = await query<{ d: string }>(
+    "SELECT DISTINCT to_char(tactic_resolve_time AT TIME ZONE 'Asia/Shanghai', 'YYYY-MM-DD') AS d " +
+      'FROM strategy_reports WHERE tactic_resolve_time IS NOT NULL ORDER BY d ASC'
+  )
+  return rows.map((r) => r.d)
 }

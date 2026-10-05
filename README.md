@@ -27,7 +27,7 @@ rit-stock-platform/
 │   ├── api/                # 接口（auth、users、strategy、rsa、login-records、vip-records）
 │   ├── utils/              # 服务层（config/db/redis/auth/password/jwt/session/users/...）
 │   └── db/                 # schema.sql + migrations/
-├── scripts/                # init-db、migrate、reset-demo、build-logo
+├── scripts/                # init-db、migrate、build-logo
 ├── docs/api.md             # 接口文档
 ├── public/                 # logo.png、favicon.ico
 └── nuxt.config.ts          # 运行时配置 + 环境变量加载
@@ -54,13 +54,13 @@ cp .env.example .env.production    # 生产环境（上线前替换为真实值�
 yarn install
 ```
 
-### 3. 初始化数据库（建库 + 建表 + 种子用户）
+### 3. 初始化数据库（建库 + 建表 + 默认超级管理员）
 
 ```bash
 yarn db:setup
 ```
 
-> 该命令等价于依次执行 `yarn db:init`（建库 + users 表 + 种子用户）和 `yarn db:migrate`（补建其余表）。生产环境需指定 `.env.production` 时，直接跑脚本：`node scripts/init-db.mjs .env.production && node scripts/migrate.mjs .env.production`。
+> 该命令等价于依次执行 `yarn db:init`（建库 + users 表 + 默认超级管理员）和 `yarn db:migrate`（补建其余表）。生产环境需指定 `.env.production` 时，直接跑脚本：`node scripts/init-db.mjs .env.production && node scripts/migrate.mjs .env.production`。
 
 ### 4. 启动
 
@@ -81,7 +81,7 @@ yarn db:setup
 等价于：
 
 ```bash
-yarn db:init      # 建库（如不存在）+ users 表 + 种子用户
+yarn db:init      # 建库（如不存在）+ users 表 + 默认超级管理员
 yarn db:migrate   # 迁移：strategy_reports / login_records / vip_operation_records / users.remark
 ```
 
@@ -94,18 +94,15 @@ yarn db:migrate   # 迁移：strategy_reports / login_records / vip_operation_re
 | login_records | 登录记录（保留 6 个月） | 迁移 003 |
 | vip_operation_records | VIP 续期操作记录 | 迁移 004 |
 
-> 只删了某张表时，直接重跑 `yarn db:migrate` 即可补建（`users` 表被删则先跑 `yarn db:init`）。如需重置演示账号密码，运行 `yarn db:reset`。
+> 只删了某张表时，直接重跑 `yarn db:migrate` 即可补建（`users` 表被删则先跑 `yarn db:init`）。
 
-## 演示账号
+## 默认超级管理员
 
-默认密码 = 手机号后 6 位，首次登录强制改密。
+`yarn db:init` 会写入一个默认超级管理员账号，首次登录强制改密。
 
-| 手机号 | 角色 | 说明 |
+| 手机号 | 角色 | 默认密码 |
 | --- | --- | --- |
-| 13800000000 | 超级管理员 | 用户管理、登录记录、VIP 记录 |
-| 13800000001 | 普通用户 | — |
-| 13800000002 | VIP | 有效期内 |
-| 13800000003 | VIP | 已过期（演示自动降级为普通用户） |
+| 13800000000 | 超级管理员 | 手机号后 6 位（000000） |
 
 ## 功能与鉴权
 
@@ -124,10 +121,9 @@ yarn db:migrate   # 迁移：strategy_reports / login_records / vip_operation_re
 
 | 命令 | 说明 |
 | --- | --- |
-| `yarn db:init` | 建库 + users 表 + 种子用户 |
+| `yarn db:init` | 建库 + users 表 + 默认超级管理员 |
 | `yarn db:migrate` | 应用 `server/db/migrations/*.sql` |
 | `yarn db:setup` | `db:init` + `db:migrate`（一键建表） |
-| `yarn db:reset` | 重置演示账号密码/角色/VIP |
 | `node scripts/build-logo.mjs <源图>` | 生成多尺寸 favicon.ico + logo.png |
 
 > 脚本默认读取项目根目录的 `.env.development`（不依赖当前工作目录）；生产环境可传参数指定：`node scripts/init-db.mjs .env.production`。

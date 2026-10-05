@@ -10,7 +10,6 @@
     "postinstall": "nuxt prepare",
     "db:init": "node scripts/init-db.mjs",
     "db:migrate": "node scripts/migrate.mjs",
-    "db:reset": "node scripts/reset-demo.mjs",
     "db:setup": "node scripts/init-db.mjs && node scripts/migrate.mjs"
   },
   "dependencies": {

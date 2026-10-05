@@ -169,7 +169,7 @@ sign = MD5( ts + JSON.stringify(data) + 32位盐值 )
 ```json
 {
   "records": [
-    { "id": 1, "operator_phone": "13800000000", "target_phone": "13800000002", "duration": "半年", "months": 6, "operated_at": "2026-10-05T05:00:00.000Z" }
+    { "id": 1, "operator_phone": "13800000000", "target_phone": "13900000001", "duration": "半年", "months": 6, "operated_at": "2026-10-05T05:00:00.000Z" }
   ],
   "total": 1,
   "page": 1,
@@ -210,7 +210,7 @@ sign = MD5( ts + JSON.stringify(data) + 32位盐值 )
 {
   "user": {
     "id": 3,
-    "phone": "13800000002",
+    "phone": "13900000001",
     "role": "vip",
     "isVip": true,
     "vipExpireAt": "2026-11-04T05:00:00.000Z",
@@ -239,14 +239,17 @@ sign = MD5( ts + JSON.stringify(data) + 32位盐值 )
 | --- | --- | --- |
 | page | 页码 | 1 |
 | pageSize | 每页条数（最大 100） | 20 |
-| sortBy | 排序字段（见下） | tacticResolveTime |
-| sortOrder | `asc` / `desc` | desc |
+| sortBy | 排序字段（见下） | 见默认排序说明 |
+| sortOrder | `asc` / `desc` | 见默认排序说明 |
 | stockNumber | 股票代码，模糊匹配 | - |
 | stockName | 股票名称，模糊匹配 | - |
 | direct | 方向，精确匹配（下拉可选值由 `directs` 返回） | - |
 | period | 周期，精确匹配（如 `day`/`30min`/`60min`，可选值由 `periods` 返回） | - |
-| tacticResolveTimeFrom | 分析时间起（YYYY-MM-DD，含当天） | - |
-| tacticResolveTimeTo | 分析时间止（YYYY-MM-DD，含当天） | - |
+| tacticResolveTime | 分析时间，逗号分隔的多个日期（`YYYY-MM-DD`，可选值由 `dates` 返回，可单选/多选） | - |
+
+**默认排序**（未显式传 `sortBy` 时，前端按角色选择）：
+- 普通用户（不可见分析分数）→ `stockNumber` 正序
+- VIP/超管（可见分析分数）→ `analyzeScore` 倒序
 
 **可排序字段**（除 JSON 文本字段外的全部返回字段）：`stockNumber / stockName / nextIndex / direct / price / tp / sl / pl / ratio / total / period / tacticResolveTime / BSP / JXP / analyzeScore`
 
@@ -264,9 +267,13 @@ sign = MD5( ts + JSON.stringify(data) + 32位盐值 )
       "tacticResolveTime": "2024-01-02T16:00:00.000Z", "BSP": 9.5, "JXP": 9.4, "CalcCha": "{...}"
     }
   ],
-  "total": 6, "page": 1, "pageSize": 20, "directs": ["1", "2"], "periods": ["30min", "60min", "day"]
+  "total": 6, "page": 1, "pageSize": 20,
+  "directs": ["1", "2"], "periods": ["30min", "60min", "day"],
+  "dates": ["2024-01-03", "2024-02-15", "2025-06-01"]
 }
 ```
+
+> `dates` 为表中分析时间（中国时区 `Asia/Shanghai`）的去重日期，升序；前端默认选中最后一个（最新）日期。
 
 **字段可见性**：
 

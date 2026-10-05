@@ -35,22 +35,31 @@ const page = ref(1)
 const pageSize = ref(20)
 const directs = ref<string[]>([])
 const periods = ref<string[]>([])
+const dates = ref<string[]>([])
 
-// 筛选条件（周期默认 day）
+// 筛选条件（周期默认 day，分析时间默认选中最后上报时间）
 const filters = reactive({
   stockNumber: '',
   stockName: '',
   direct: '',
   period: 'day',
-  dateRange: null as [string, string] | null
+  dates: [] as string[]
 })
 
 // 周期下拉选项（确保 day 始终存在）
 const periodOptions = computed(() => Array.from(new Set(['day', ...periods.value])))
 
-// 排序（服务端排序）
-const sortBy = ref('tacticResolveTime')
-const sortOrder = ref<'asc' | 'desc'>('desc')
+// 默认排序：普通用户按股票代码正序；VIP/超管按分析分数倒序
+function defaultSort() {
+  return canSeeAll.value
+    ? { by: 'analyzeScore', order: 'desc' as const }
+    : { by: 'stockNumber', order: 'asc' as const }
+}
+const sortBy = ref(defaultSort().by)
+const sortOrder = ref<'asc' | 'desc'>(defaultSort().order)
+
+// 分析时间默认选中是否已初始化（仅首次加载时默认选最新）
+let datesInitialized = false
 
 function buildQueryUrl() {
   const p = new URLSearchParams()
@@ -62,8 +71,7 @@ function buildQueryUrl() {
   if (filters.stockName) p.set('stockName', filters.stockName)
   if (filters.direct) p.set('direct', filters.direct)
   if (filters.period) p.set('period', filters.period)
-  if (filters.dateRange?.[0]) p.set('tacticResolveTimeFrom', filters.dateRange[0])
-  if (filters.dateRange?.[1]) p.set('tacticResolveTimeTo', filters.dateRange[1])
+  if (filters.dates.length) p.set('tacticResolveTime', filters.dates.join(','))
   return `/api/strategy/reports?${p.toString()}`
 }
 
@@ -75,11 +83,20 @@ async function fetchData() {
       total: number
       directs: string[]
       periods: string[]
+      dates: string[]
     }>(buildQueryUrl())
     records.value = data.records
     total.value = data.total
     if (data.directs?.length) directs.value = data.directs
     if (data.periods?.length) periods.value = data.periods
+    if (data.dates?.length) {
+      dates.value = data.dates
+      // 首次加载默认选中最后上报（最新）的分析时间
+      if (!datesInitialized) {
+        datesInitialized = true
+        filters.dates = [data.dates[data.dates.length - 1]]
+      }
+    }
   } catch (err: any) {
     ElMessage.error(err?.data?.message || '加载策略数据失败')
   } finally {
@@ -97,14 +114,21 @@ function onReset() {
   filters.stockName = ''
   filters.direct = ''
   filters.period = 'day'
-  filters.dateRange = null
-  onSearch()
+  // 恢复默认排序 + 默认分析时间
+  const d = defaultSort()
+  sortBy.value = d.by
+  sortOrder.value = d.order
+  datesInitialized = false
+  filters.dates = []
+  page.value = 1
+  fetchData()
 }
 
 function onSortChange({ prop, order }: { prop: string; order: string | null }) {
   if (!order) {
-    sortBy.value = 'tacticResolveTime'
-    sortOrder.value = 'desc'
+    const d = defaultSort()
+    sortBy.value = d.by
+    sortOrder.value = d.order
   } else {
     sortBy.value = prop
     sortOrder.value = order === 'ascending' ? 'asc' : 'desc'
@@ -175,8 +199,10 @@ onMounted(fetchData)
             </el-select>
           </el-form-item>
           <el-form-item label="分析时间">
-            <el-date-picker v-model="filters.dateRange" type="daterange" range-separator="至" start-placeholder="开始日期"
-              end-placeholder="结束日期" value-format="YYYY-MM-DD" style="width: 240px" />
+            <el-select v-model="filters.dates" multiple collapse-tags filterable placeholder="选择日期" clearable
+              style="width: 260px">
+              <el-option v-for="d in dates" :key="d" :label="d" :value="d" />
+            </el-select>
           </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="onSearch">查询</el-button>

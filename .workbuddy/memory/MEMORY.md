@@ -12,7 +12,7 @@
 
 ## 命令约定
 - 构建/开发需加 `NODE_OPTIONS=` 前缀以绕过 WorkBuddy 安全删除守卫（否则 `[safe-delete]` 拦截批量删除 node_modules）。
-- 初始化数据库：`node scripts/init-db.mjs .env.development`
+- 建表/初始化：`yarn db:setup`（= db:init + db:migrate，幂等）；`db:init`（建库+users+默认超管）、`db:migrate`（补建其余表）。已删除 db:reset 与 reset-demo.mjs。
 - 包管理器：yarn 1.22
 
 ## 数据库
@@ -21,14 +21,13 @@
 - 连接信息在 `.env.development`（gitignored），密码含 `#` 需引号包裹。
 
 ## 用户管理
-- 管理端 API：`GET/POST /api/users`、`PATCH /api/users/:id`、`POST /api/users/:id/vip`（months=1/3/6/12）、`DELETE /api/users/:id`；仅 super_admin。
+- 管理端 API：`GET/POST /api/users`、`PATCH /api/users/:id`、`POST /api/users/:id/vip`（枚举 1month/3months/6months/1year）、`DELETE /api/users/:id`；仅 super_admin。
 - 服务层 `server/utils/users.ts`；`requireAdmin` 在 `server/utils/auth.ts`。
 - VIP 续期从当前到期时间续费（若仍有效）否则从现在起；`vipRemainingDays` 在 `toAuthUser` 返回。
 - 前端页：`/profile`（个人中心）、`/admin/users`（用户管理，中间件 `admin`）。
 
-## 演示账号（默认密码=手机号后6位，首次登录改密）
-- 超级管理员 13800000000 / 普通用户 13800000001
-- VIP 13800000002（有效）/ 过期VIP 13800000003
+## 默认账号
+- 建表脚本只种一个默认超级管理员 `13800000000`（默认密码=手机号后6位 000000，首次登录强制改密）。演示账号逻辑与 reset-demo 已删除。
 
 ## 外部接口 / 安全配置
 - RSA：`NUXT_RSA_PRIVATE_KEY`（PKCS8 PEM base64，仅服务端）；`GET /api/rsa/public-key` 返回公钥，加解密用 RSA-OAEP-SHA256。

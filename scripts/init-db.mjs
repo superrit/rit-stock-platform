@@ -54,13 +54,11 @@ function defaultPassword(phone) {
   return phone.replace(/\D/g, '').slice(-6)
 }
 
-// 种子用户：全部 must_change_password = true（首次登录强制改密）
-const seedUsers = [
-  { phone: '13800000000', role: 'super_admin', vipDays: null },
-  { phone: '13800000001', role: 'user', vipDays: null },
-  { phone: '13800000002', role: 'vip', vipDays: 30 },    // 有效 VIP
-  { phone: '13800000003', role: 'vip', vipDays: -1 }     // 已过期 VIP（演示失去 VIP 身份）
-]
+// 默认超级管理员账号（首次登录强制改密，默认密码 = 手机号后 6 位）
+const defaultAdmin = {
+  phone: '13800000000',
+  role: 'super_admin'
+}
 
 async function main() {
   // 1) 确保数据库存在
@@ -93,20 +91,15 @@ async function main() {
   await pool.query(schemaSql)
   console.log('[init] schema 已应用')
 
-  // 3) 写入种子用户
-  for (const u of seedUsers) {
-    const pw = defaultPassword(u.phone)
-    const vipExpire = u.vipDays === null
-      ? null
-      : new Date(Date.now() + u.vipDays * 24 * 60 * 60 * 1000)
-    await pool.query(
-      `INSERT INTO users (phone, password_hash, salt, role, must_change_password, vip_expire_at)
-       VALUES ($1, $2, $3, $4, TRUE, $5)
-       ON CONFLICT (phone) DO NOTHING`,
-      [u.phone, hashPassword(pw), salt, u.role, vipExpire]
-    )
-    console.log(`[init] 种子用户 ${u.phone} (${u.role}, 默认密码 ${pw}) 就绪`)
-  }
+  // 3) 写入默认超级管理员
+  const pw = defaultPassword(defaultAdmin.phone)
+  await pool.query(
+    `INSERT INTO users (phone, password_hash, salt, role, must_change_password)
+     VALUES ($1, $2, $3, $4, TRUE)
+     ON CONFLICT (phone) DO NOTHING`,
+    [defaultAdmin.phone, hashPassword(pw), salt, defaultAdmin.role]
+  )
+  console.log(`[init] 默认超级管理员 ${defaultAdmin.phone}（默认密码 ${pw}）就绪`)
 
   await pool.end()
   console.log('[init] 数据库初始化完成 ✅')

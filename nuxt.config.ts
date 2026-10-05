@@ -35,6 +35,11 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
+  // 错误处理：后端记录日志、不向前端暴露堆栈
+  nitro: {
+    errorHandler: [resolve(cwd, 'server/error.ts').replace(/\\/g, '/')]
+  },
+
   modules: [
     '@nuxt/image',
     '@element-plus/nuxt',
