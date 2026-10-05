@@ -1,4 +1,5 @@
-import { getPool } from './db'
+import { getPool, query } from './db'
+import type { Role } from './auth'
 
 // 列顺序与 strategy_reports 表对应
 const COLS = [
@@ -88,4 +89,130 @@ export async function bulkUpsertReports(items: Record<string, unknown>[], report
   }
 
   return total
+}
+
+// ============ 策略查询（分页/排序/筛选 + 按角色裁剪字段） ============
+
+// 允许排序的字段（camelCase → 数据库列），防止 SQL 注入
+const SORTABLE: Record<string, string> = {
+  hash: 'hash',
+  stockNumber: 'stock_number',
+  stockName: 'stock_name',
+  nextIndex: 'next_index',
+  direct: 'direct',
+  price: 'price',
+  tp: 'tp',
+  sl: 'sl',
+  pl: 'pl',
+  ratio: 'ratio',
+  total: 'total',
+  period: 'period',
+  tacticResolveTime: 'tactic_resolve_time',
+  BSP: 'bsp',
+  JXP: 'jxp',
+  analyzeScore: 'analyze_score',
+  createdAt: 'created_at'
+}
+
+export interface StrategyQuery {
+  page: number
+  pageSize: number
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+  stockNumber?: string
+  stockName?: string
+  direct?: string
+  tacticResolveTimeFrom?: string
+  tacticResolveTimeTo?: string
+}
+
+// 普通用户可见字段；VIP/超管额外可见 udStr/mustEles/scoreDetail/analyzeScore
+function toStrategyItem(row: Record<string, unknown>, role: Role): Record<string, unknown> {
+  const item: Record<string, unknown> = {
+    hash: row.hash,
+    stockNumber: row.stock_number,
+    stockName: row.stock_name,
+    nextIndex: row.next_index,
+    direct: row.direct,
+    price: row.price,
+    tp: row.tp,
+    sl: row.sl,
+    pl: row.pl,
+    result: row.result,
+    ratio: row.ratio,
+    total: row.total,
+    period: row.period,
+    tacticResolveTime: row.tactic_resolve_time,
+    BSP: row.bsp,
+    JXP: row.jxp,
+    CalcCha: row.calc_cha
+  }
+  if (role !== 'user') {
+    item.udStr = row.ud_str
+    item.mustEles = row.must_eles
+    item.scoreDetail = row.score_detail
+    item.analyzeScore = row.analyze_score
+  }
+  return item
+}
+
+export async function listReports(q: StrategyQuery, role: Role) {
+  const conditions: string[] = []
+  const whereParams: unknown[] = []
+
+  if (q.stockNumber) {
+    whereParams.push('%' + q.stockNumber + '%')
+    conditions.push('stock_number ILIKE $' + whereParams.length)
+  }
+  if (q.stockName) {
+    whereParams.push('%' + q.stockName + '%')
+    conditions.push('stock_name ILIKE $' + whereParams.length)
+  }
+  if (q.direct) {
+    whereParams.push(q.direct)
+    conditions.push('direct = $' + whereParams.length)
+  }
+  if (q.tacticResolveTimeFrom) {
+    whereParams.push(q.tacticResolveTimeFrom)
+    conditions.push('tactic_resolve_time >= ($' + whereParams.length + ')::date')
+  }
+  if (q.tacticResolveTimeTo) {
+    whereParams.push(q.tacticResolveTimeTo)
+    conditions.push("tactic_resolve_time < ($" + whereParams.length + ")::date + INTERVAL '1 day'")
+  }
+
+  const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : ''
+  const sortCol = SORTABLE[q.sortBy || 'tacticResolveTime'] || 'tactic_resolve_time'
+  const sortDir = q.sortOrder === 'asc' ? 'ASC' : 'DESC'
+
+  const listParams = [...whereParams, q.pageSize, (q.page - 1) * q.pageSize]
+  const limitIdx = whereParams.length + 1
+  const offsetIdx = whereParams.length + 2
+
+  const rows = await query<Record<string, unknown>>(
+    'SELECT * FROM strategy_reports ' + where +
+    ' ORDER BY ' + sortCol + ' ' + sortDir + ' NULLS LAST' +
+    ' LIMIT $' + limitIdx + ' OFFSET $' + offsetIdx,
+    listParams
+  )
+  const countRes = await query<{ count: string }>(
+    'SELECT COUNT(*) AS count FROM strategy_reports ' + where,
+    whereParams
+  )
+  const total = Number(countRes[0]?.count ?? 0)
+
+  return {
+    records: rows.map((r) => toStrategyItem(r, role)),
+    total,
+    page: q.page,
+    pageSize: q.pageSize
+  }
+}
+
+// direct 字段可选值（用于筛选下拉）
+export async function listDirects(): Promise<string[]> {
+  const rows = await query<{ direct: string }>(
+    'SELECT DISTINCT direct FROM strategy_reports WHERE direct IS NOT NULL ORDER BY direct ASC'
+  )
+  return rows.map((r) => r.direct)
 }

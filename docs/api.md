@@ -225,6 +225,55 @@ sign = MD5( ts + JSON.stringify(data) + 32位盐值 )
 
 ---
 
+## 2.1 策略分页查询（登录用户）
+
+查询已上报的策略数据。**字段按角色裁剪**：普通用户仅返回基础字段，VIP/超级管理员返回全部字段（含 `udStr/mustEles/scoreDetail/analyzeScore`）。
+
+- **方法**：`GET`
+- **路径**：`/api/strategy/reports`
+- **鉴权**：登录用户（普通用户/VIP/超管均可）
+
+**查询参数**：
+
+| 参数 | 说明 | 默认 |
+| --- | --- | --- |
+| page | 页码 | 1 |
+| pageSize | 每页条数（最大 100） | 20 |
+| sortBy | 排序字段（见下） | tacticResolveTime |
+| sortOrder | `asc` / `desc` | desc |
+| stockNumber | 股票代码，模糊匹配 | - |
+| stockName | 股票名称，模糊匹配 | - |
+| direct | 方向，精确匹配（下拉可选值由 `directs` 返回） | - |
+| tacticResolveTimeFrom | 分析时间起（YYYY-MM-DD，含当天） | - |
+| tacticResolveTimeTo | 分析时间止（YYYY-MM-DD，含当天） | - |
+
+**可排序字段**：`hash / stockNumber / stockName / nextIndex / direct / price / tp / sl / pl / ratio / total / period / tacticResolveTime / BSP / JXP / analyzeScore / createdAt`
+
+**响应示例**：
+
+```json
+{
+  "records": [
+    {
+      "hash": "seedhash1", "stockNumber": "002578.SZ", "stockName": "闽发铝业",
+      "nextIndex": 100, "direct": "1", "price": 10, "tp": 0.5, "sl": 0.25, "pl": 0.15,
+      "result": "{\"0\":40,...}", "ratio": 45, "total": 1000, "period": "day",
+      "tacticResolveTime": "2024-01-02T16:00:00.000Z", "BSP": 9.5, "JXP": 9.4, "CalcCha": "{...}"
+    }
+  ],
+  "total": 6, "page": 1, "pageSize": 20, "directs": ["1", "2"]
+}
+```
+
+**字段可见性**：
+
+| 字段 | 普通用户 | VIP/超管 |
+| --- | --- | --- |
+| hash/stockNumber/stockName/nextIndex/direct/price/tp/sl/pl/result/ratio/total/period/tacticResolveTime/BSP/JXP/CalcCha | ✅ | ✅ |
+| udStr/mustEles/scoreDetail/analyzeScore | ❌ | ✅ |
+
+---
+
 ## 附：相关端点索引
 
 | 方法 | 路径 | 鉴权 | 说明 |
@@ -234,6 +283,7 @@ sign = MD5( ts + JSON.stringify(data) + 32位盐值 )
 | GET | /api/login-records | 管理员 | 登录记录分页查询 |
 | GET | /api/vip-records | 管理员 | VIP 操作记录分页查询 |
 | POST | /api/users/:id/vip | 管理员 | VIP 续期（枚举） |
+| GET | /api/strategy/reports | 登录用户 | 策略分页查询（按角色裁剪字段） |
 | GET | /api/users | 管理员 | 用户列表 |
 | POST | /api/users | 管理员 | 新增用户 |
 | PATCH | /api/users/:id | 管理员 | 修改备注 |

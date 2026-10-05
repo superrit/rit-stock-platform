@@ -44,7 +44,12 @@ export default defineNuxtConfig({
   app: {
     head: {
       title: '股票量化交易平台',
-      htmlAttrs: { lang: 'zh-CN' }
+      htmlAttrs: { lang: 'zh-CN' },
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'icon', type: 'image/png', href: '/logo.png' },
+        { rel: 'apple-touch-icon', href: '/logo.png' }
+      ]
     }
   },
 

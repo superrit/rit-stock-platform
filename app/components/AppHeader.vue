@@ -14,10 +14,14 @@ async function onLogout() {
 
 <template>
   <header class="app-header">
-    <NuxtLink to="/" class="logo">股票量化交易平台</NuxtLink>
+    <NuxtLink to="/" class="brand">
+      <img src="/logo.png" alt="logo" class="logo-img" />
+      <span class="logo-text">股票量化交易平台</span>
+    </NuxtLink>
 
     <nav class="nav">
       <NuxtLink to="/" class="nav-link" :class="{ active: route.path === '/' }">首页</NuxtLink>
+      <NuxtLink to="/strategy" class="nav-link" :class="{ active: route.path === '/strategy' }">策略查看</NuxtLink>
       <NuxtLink to="/profile" class="nav-link" :class="{ active: route.path === '/profile' }">个人中心</NuxtLink>
       <NuxtLink
         v-if="user?.role === 'super_admin'"
@@ -62,12 +66,22 @@ async function onLogout() {
   gap: 32px;
   padding: 0 24px;
 }
-.logo {
+.logo-img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.logo-text {
   font-size: 16px;
   font-weight: 600;
   color: #1e3a8a;
-  text-decoration: none;
-  white-space: nowrap;
 }
 .nav {
   display: flex;
