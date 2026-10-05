@@ -31,7 +31,10 @@ function loadEnv(file) {
   return env
 }
 
-const envFile = resolve(process.argv[2] || '.env.development')
+// 默认 .env 路径基于脚本所在目录（项目根），而非当前工作目录
+const envFile = process.argv[2]
+  ? resolve(process.argv[2])
+  : resolve(__dirname, '../.env.development')
 const env = loadEnv(envFile)
 
 const db = {

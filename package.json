@@ -7,7 +7,11 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "db:init": "node scripts/init-db.mjs",
+    "db:migrate": "node scripts/migrate.mjs",
+    "db:reset": "node scripts/reset-demo.mjs",
+    "db:setup": "node scripts/init-db.mjs && node scripts/migrate.mjs"
   },
   "dependencies": {
     "@element-plus/icons-vue": ">=0.2.6",

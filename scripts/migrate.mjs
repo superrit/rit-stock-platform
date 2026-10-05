@@ -6,10 +6,13 @@
  *   node scripts/migrate.mjs [.env 文件路径]
  */
 import { readFileSync, readdirSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import pg from 'pg'
 
 const { Pool } = pg
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 function loadEnv(file) {
   const text = readFileSync(file, 'utf8')
@@ -26,7 +29,10 @@ function loadEnv(file) {
   return env
 }
 
-const envFile = resolve(process.argv[2] || '.env.development')
+// 默认 .env 路径基于脚本所在目录（项目根），而非当前工作目录
+const envFile = process.argv[2]
+  ? resolve(process.argv[2])
+  : resolve(__dirname, '../.env.development')
 const env = loadEnv(envFile)
 
 const pool = new Pool({
