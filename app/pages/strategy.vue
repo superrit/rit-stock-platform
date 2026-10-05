@@ -160,22 +160,12 @@ onMounted(fetchData)
         <!-- 筛选栏 -->
         <el-form inline class="filters" @submit.prevent="onSearch">
           <el-form-item label="股票代码">
-            <el-input
-              v-model="filters.stockNumber"
-              placeholder="如 002578"
-              clearable
-              style="width: 140px"
-              @keyup.enter="onSearch"
-            />
+            <el-input v-model="filters.stockNumber" placeholder="如 002578" clearable style="width: 140px"
+              @keyup.enter="onSearch" />
           </el-form-item>
           <el-form-item label="股票名称">
-            <el-input
-              v-model="filters.stockName"
-              placeholder="名称关键词"
-              clearable
-              style="width: 140px"
-              @keyup.enter="onSearch"
-            />
+            <el-input v-model="filters.stockName" placeholder="名称关键词" clearable style="width: 140px"
+              @keyup.enter="onSearch" />
           </el-form-item>
           <el-form-item label="方向">
             <el-select v-model="filters.direct" placeholder="全部" clearable style="width: 100px">
@@ -188,15 +178,8 @@ onMounted(fetchData)
             </el-select>
           </el-form-item>
           <el-form-item label="分析时间">
-            <el-date-picker
-              v-model="filters.dateRange"
-              type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
-              value-format="YYYY-MM-DD"
-              style="width: 240px"
-            />
+            <el-date-picker v-model="filters.dateRange" type="daterange" range-separator="至" start-placeholder="开始日期"
+              end-placeholder="结束日期" value-format="YYYY-MM-DD" style="width: 240px" />
           </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="onSearch">查询</el-button>
@@ -205,15 +188,10 @@ onMounted(fetchData)
         </el-form>
 
         <!-- 数据表：全部字段平铺，非 JSON 字段可点击列头排序 -->
-        <el-table
-          v-loading="loading"
-          :data="records"
-          border
-          stripe
-          @sort-change="onSortChange"
-        >
+        <el-table v-loading="loading" :data="records" border stripe @sort-change="onSortChange">
           <el-table-column prop="stockNumber" label="股票代码" width="110" sortable="custom" fixed="left" />
           <el-table-column prop="stockName" label="股票名称" min-width="90" sortable="custom" show-overflow-tooltip />
+          <el-table-column v-if="canSeeAll" prop="analyzeScore" label="分析分数" width="90" sortable="custom" />
           <el-table-column prop="direct" label="方向" width="66" sortable="custom" />
           <el-table-column prop="price" label="开仓价" width="82" sortable="custom" />
           <el-table-column prop="tp" label="止盈" width="76" sortable="custom" />
@@ -237,20 +215,12 @@ onMounted(fetchData)
           <el-table-column v-if="canSeeAll" label="分数详情(scoreDetail)" min-width="160" show-overflow-tooltip>
             <template #default="{ row }">{{ compactJson(row.scoreDetail) }}</template>
           </el-table-column>
-          <el-table-column v-if="canSeeAll" prop="analyzeScore" label="分析分数" width="90" sortable="custom" />
         </el-table>
 
         <div class="pager">
-          <el-pagination
-            background
-            layout="total, sizes, prev, pager, next"
-            :total="total"
-            :page-size="pageSize"
-            :current-page="page"
-            :page-sizes="[20, 50, 100]"
-            @current-change="onPageChange"
-            @size-change="(s: number) => { pageSize = s; page = 1; fetchData() }"
-          />
+          <el-pagination background layout="total, sizes, prev, pager, next" :total="total" :page-size="pageSize"
+            :current-page="page" :page-sizes="[20, 50, 100]" @current-change="onPageChange"
+            @size-change="(s: number) => { pageSize = s; page = 1; fetchData() }" />
         </div>
       </el-card>
     </main>
@@ -262,25 +232,30 @@ onMounted(fetchData)
   min-height: 100vh;
   background: #f5f7fa;
 }
+
 .content {
   max-width: 1560px;
   margin: 24px auto;
   padding: 0 16px;
 }
+
 .toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 16px;
 }
+
 .title {
   font-size: 16px;
   font-weight: 600;
   color: #1f2937;
 }
+
 .filters {
   margin-bottom: 8px;
 }
+
 .pager {
   display: flex;
   justify-content: flex-end;
