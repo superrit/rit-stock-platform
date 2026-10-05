@@ -200,10 +200,8 @@ onMounted(fetchData)
           <el-table-column prop="pl" label="平保" width="76" sortable="custom" />
           <el-table-column prop="ratio" label="最终比例" width="88" sortable="custom" />
           <el-table-column prop="total" label="订单数" width="90" sortable="custom" />
-
           <el-table-column prop="BSP" label="保守进场价" width="100" sortable="custom" />
           <el-table-column prop="JXP" label="极限进场价" width="100" sortable="custom" />
-          <el-table-column prop="nextIndex" label="K线索引" width="90" sortable="custom" />
           <el-table-column label="统计结果(result)" min-width="160" show-overflow-tooltip>
             <template #default="{ row }">{{ compactJson(row.result) }}</template>
           </el-table-column>
