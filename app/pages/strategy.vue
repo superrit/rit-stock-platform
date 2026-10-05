@@ -191,6 +191,10 @@ onMounted(fetchData)
         <el-table v-loading="loading" :data="records" border stripe @sort-change="onSortChange">
           <el-table-column prop="stockNumber" label="股票代码" width="110" sortable="custom" fixed="left" />
           <el-table-column prop="stockName" label="股票名称" min-width="90" sortable="custom" show-overflow-tooltip />
+          <el-table-column prop="period" label="周期" width="80" sortable="custom" />
+          <el-table-column prop="tacticResolveTime" label="分析时间" width="110" sortable="custom">
+            <template #default="{ row }">{{ fmtDate(row.tacticResolveTime) }}</template>
+          </el-table-column>
           <el-table-column v-if="canSeeAll" prop="analyzeScore" label="分析分数" width="90" sortable="custom" />
           <el-table-column prop="direct" label="方向" width="66" sortable="custom" />
           <el-table-column prop="price" label="开仓价" width="82" sortable="custom" />
@@ -199,10 +203,7 @@ onMounted(fetchData)
           <el-table-column prop="pl" label="平保" width="76" sortable="custom" />
           <el-table-column prop="ratio" label="最终比例" width="88" sortable="custom" />
           <el-table-column prop="total" label="订单数" width="90" sortable="custom" />
-          <el-table-column prop="period" label="周期" width="80" sortable="custom" />
-          <el-table-column prop="tacticResolveTime" label="分析时间" width="110" sortable="custom">
-            <template #default="{ row }">{{ fmtDate(row.tacticResolveTime) }}</template>
-          </el-table-column>
+
           <el-table-column prop="BSP" label="保守进场价" width="100" sortable="custom" />
           <el-table-column prop="JXP" label="极限进场价" width="100" sortable="custom" />
           <el-table-column prop="nextIndex" label="K线索引" width="90" sortable="custom" />
