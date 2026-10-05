@@ -19,6 +19,9 @@ export interface AppConfig {
   redis: RedisConfig
   jwt: { secret: string; expiresIn: string }
   passwordSalt: string
+  rsaPrivateKey: string
+  signSalt: string
+  replayWindowMs: number
 }
 
 function requireValue(name: string, value: string): string {
@@ -49,7 +52,10 @@ export function getConfig(): AppConfig {
       secret: requireValue('NUXT_JWT_SECRET', String(rc.jwt?.secret || '')),
       expiresIn: String(rc.jwt?.expiresIn || '1d')
     },
-    passwordSalt: requireValue('NUXT_PASSWORD_SALT', String(rc.passwordSalt || ''))
+    passwordSalt: requireValue('NUXT_PASSWORD_SALT', String(rc.passwordSalt || '')),
+    rsaPrivateKey: requireValue('NUXT_RSA_PRIVATE_KEY', String(rc.rsaPrivateKey || '')),
+    signSalt: requireValue('NUXT_SIGN_SALT', String(rc.signSalt || '')),
+    replayWindowMs: Number(rc.replayWindowMs ?? 300000)
   }
 
   if (Number.isNaN(config.db.port) || config.db.port <= 0) {
@@ -57,6 +63,12 @@ export function getConfig(): AppConfig {
   }
   if (Number.isNaN(config.redis.port) || config.redis.port <= 0) {
     throw new Error('[config] NUXT_REDIS_PORT 非法')
+  }
+  if (config.signSalt.length !== 32) {
+    throw new Error('[config] NUXT_SIGN_SALT 长度必须为 32 位')
+  }
+  if (Number.isNaN(config.replayWindowMs) || config.replayWindowMs < 0) {
+    throw new Error('[config] NUXT_REPLAY_WINDOW_MS 非法')
   }
 
   return config

@@ -29,3 +29,10 @@
 ## 演示账号（默认密码=手机号后6位，首次登录改密）
 - 超级管理员 13800000000 / 普通用户 13800000001
 - VIP 13800000002（有效）/ 过期VIP 13800000003
+
+## 外部接口 / 安全配置
+- RSA：`NUXT_RSA_PRIVATE_KEY`（PKCS8 PEM base64，仅服务端）；`GET /api/rsa/public-key` 返回公钥，加解密用 RSA-OAEP-SHA256。
+- 策略上报：`POST /api/strategy/report`，sign=MD5(ts+JSON.stringify(data)+`NUXT_SIGN_SALT`(32位))，ts 防重放窗口 `NUXT_REPLAY_WINDOW_MS`。表 `strategy_reports`（hash 唯一 upsert）。
+- 登录记录表 `login_records`（保留6个月），VIP 操作记录表 `vip_operation_records`。
+- VIP 续期枚举：`1month/3months/6months/1year`（前端不可自由上送时长），接口 `POST /api/users/:id/vip`。
+- 接口文档：`docs/api.md`。

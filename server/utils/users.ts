@@ -4,6 +4,16 @@ import { getConfig } from './config'
 import { effectiveRole, vipRemainingDays } from './auth'
 import type { UserRecord } from './auth'
 
+// VIP 续期统一枚举：延长类型不可由前端自由上送，只能从以下枚举中选择
+export const VIP_DURATIONS = {
+  '1month': { months: 1, label: '1个月' },
+  '3months': { months: 3, label: '3个月' },
+  '6months': { months: 6, label: '半年' },
+  '1year': { months: 12, label: '1年' }
+} as const
+
+export type VipDurationKey = keyof typeof VIP_DURATIONS
+
 // 管理端用户列表项
 export interface AdminUserItem {
   id: number

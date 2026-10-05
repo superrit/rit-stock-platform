@@ -74,6 +74,13 @@ export default defineNuxtConfig({
     // 密码加盐（重要配置，仅服务端可见，绝不暴露给客户端）
     passwordSalt: '',
 
+    // RSA 核心私钥（PKCS8 PEM 的 base64，仅服务端，用于解密客户端 RSA 加密的数据）
+    rsaPrivateKey: '',
+    // 策略上报签名盐值（32 位，sign = MD5(ts + JSON.stringify(data) + 此盐)）
+    signSalt: '',
+    // 上报防重放时间窗口（毫秒，默认 5 分钟）
+    replayWindowMs: 300000,
+
     public: {
       appName: '股票量化交易平台'
     }

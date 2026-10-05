@@ -9,6 +9,7 @@ import {
   issueSession,
   setAuthCookie
 } from '../../utils/session'
+import { recordLogin } from '../../utils/login-records'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody<{
@@ -55,5 +56,7 @@ export default defineEventHandler(async (event) => {
   if (!refreshed) throw createError({ statusCode: 500, message: '改密后会话建立失败' })
   const accessToken = await issueSession(refreshed)
   setAuthCookie(event, accessToken)
+  // 记录登录（改密成功后自动登录）
+  await recordLogin(event, refreshed.phone)
   return { token: accessToken, user: toAuthUser(refreshed) }
 })

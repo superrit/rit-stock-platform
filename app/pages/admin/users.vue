@@ -86,7 +86,7 @@ async function saveRemark() {
   }
 }
 
-async function onExtendVip(u: AdminUser, label: string, months: number) {
+async function onExtendVip(u: AdminUser, label: string, duration: string) {
   try {
     await ElMessageBox.confirm(
       `确认为用户 ${u.phone} 续期 VIP ${label}？`,
@@ -97,7 +97,7 @@ async function onExtendVip(u: AdminUser, label: string, months: number) {
     return // 用户取消
   }
   try {
-    await extendVip(u.id, months)
+    await extendVip(u.id, duration)
     ElMessage.success(`已为用户 ${u.phone} 续期 ${label} VIP`)
     await refresh()
     if (editVisible.value) {
@@ -210,11 +210,11 @@ onMounted(refresh)
           <span class="vip-label">VIP 有效期续期：</span>
           <el-button
             v-for="opt in vipDurationOptions"
-            :key="opt.months"
+            :key="opt.duration"
             type="warning"
             plain
             size="small"
-            @click="onExtendVip(editTarget, opt.label, opt.months)"
+            @click="onExtendVip(editTarget, opt.label, opt.duration)"
           >
             {{ opt.label }}
           </el-button>

@@ -3,6 +3,7 @@ import { verifyPassword } from '../../utils/password'
 import { toAuthUser } from '../../utils/auth'
 import type { UserRecord } from '../../utils/auth'
 import { issueSession, issueChangePasswordToken, setAuthCookie } from '../../utils/session'
+import { recordLogin } from '../../utils/login-records'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody<{ phone?: string; password?: string }>(event).catch(() => ({}))
@@ -37,5 +38,7 @@ export default defineEventHandler(async (event) => {
   // 正常登录：创建单设备会话
   const token = await issueSession(user)
   setAuthCookie(event, token)
+  // 记录登录（时间/IP/设备/手机号）
+  await recordLogin(event, user.phone)
   return { token, user: toAuthUser(user) }
 })

@@ -27,6 +27,22 @@ async function onLogout() {
       >
         用户管理
       </NuxtLink>
+      <NuxtLink
+        v-if="user?.role === 'super_admin'"
+        to="/admin/login-records"
+        class="nav-link"
+        :class="{ active: route.path === '/admin/login-records' }"
+      >
+        登录记录
+      </NuxtLink>
+      <NuxtLink
+        v-if="user?.role === 'super_admin'"
+        to="/admin/vip-records"
+        class="nav-link"
+        :class="{ active: route.path === '/admin/vip-records' }"
+      >
+        VIP 记录
+      </NuxtLink>
     </nav>
 
     <div class="right">

@@ -13,10 +13,10 @@ export interface AdminUser {
 }
 
 export const vipDurationOptions = [
-  { label: '1个月', months: 1 },
-  { label: '3个月', months: 3 },
-  { label: '半年', months: 6 },
-  { label: '1年', months: 12 }
+  { label: '1个月', duration: '1month' },
+  { label: '3个月', duration: '3months' },
+  { label: '半年', duration: '6months' },
+  { label: '1年', duration: '1year' }
 ]
 
 export function useAdminUsers() {
@@ -41,10 +41,10 @@ export function useAdminUsers() {
     return data.user
   }
 
-  async function extendVip(id: number, months: number): Promise<AdminUser> {
+  async function extendVip(id: number, duration: string): Promise<AdminUser> {
     const data = await $fetch<{ user: AdminUser }>(`/api/users/${id}/vip`, {
       method: 'POST',
-      body: { months }
+      body: { duration }
     })
     return data.user
   }
