@@ -38,6 +38,15 @@
 - 策略查询：`GET /api/strategy/reports`（登录即可，字段按角色裁剪：普通用户 16 字段，VIP/超管多 scoreDetail/analyzeScore；hash/udStr/mustEles 不返回），页面为首页 `/`（原 dashboard 已移除）。
 - Logo/Favicon：`public/logo.png`(512) + `public/favicon.ico`(多尺寸)；再生成用 `node scripts/build-logo.mjs <源图>`。
 
+## 生产部署（2026-10-07）
+- **一键部署**：`npm run deploy`（= `node scripts/deploy.mjs`），另有 `npm run deploy:skip-build`。脚本用 `ssh2`（SSH_PASSWORD 密码认证）+ `tar`(node-tar) 纯 JS 打包，从 `.env.production` 读 SSH_* 配置。
+- **服务器**：腾讯云 `134.175.143.160`（Ubuntu 26.04，2核3.6GB），`ubuntu` 用户免密 sudo。端口：80=应用 / 5003=GitLab / 22=SSH。
+- **部署目录**：`/opt/rit-stock-platform`（.output + server/db + rit.env）；Node 22.22.2 在 `/opt/nodejs`；PostgreSQL 18 + Redis 8（apt）。
+- **systemd**：`/etc/systemd/system/rit-stock.service`，`AmbientCapabilities=CAP_NET_BIND_SERVICE` 绑 80，`EnvironmentFile=/opt/rit-stock-platform/rit.env`（仅 NUXT_*，chmod 600），`Restart=always`+开机自启。日志 `journalctl -u rit-stock -f`。
+- **跨平台 sharp**：Windows 构建只打包 win32 sharp；`deploy.mjs` 自动下载 linux-x64 sharp+libvips 注入 `.output`（缓存 `node_modules/.cache/deploy-sharp`）。yarn 无法在 win32 装 `@img/sharp-libvips-linux-x64`（os/cpu 限制），注入用 tar `strip:1` 直接解压（跨盘 rename 报 EXDEV）。
+- **健康检查**：`GET /api/health` 返回 `{"status":"ok","db":"up","redis":"up","env":"prod"}`。
+- devDependencies 新增：`ssh2`、`tar`。
+
 ## 前端主题约定（2026-10-06 重构后）
 - 深色金色主题：主题色 #E6AC00，页面底 #0b0e14，卡片 #131722，边框 #232836。
 - 主题文件 `app/assets/css/theme.css`：定义 `--app-*` 设计 Token + 覆盖 Element Plus 暗色变量（element-plus dark css-vars 在 nuxt.config css 数组中先于它加载）；`html.dark` 由 nuxt.config htmlAttrs 挂载。

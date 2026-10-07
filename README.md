@@ -125,8 +125,70 @@ yarn db:migrate   # 迁移：strategy_reports / login_records / vip_operation_re
 | `yarn db:migrate` | 应用 `server/db/migrations/*.sql` |
 | `yarn db:setup` | `db:init` + `db:migrate`（一键建表） |
 | `node scripts/build-logo.mjs <源图>` | 生成多尺寸 favicon.ico + logo.png |
+| `npm run deploy` | 一键生产部署（构建 → 打包 → 上传 → 初始化 → 启动 → 健康检查） |
+| `npm run deploy:skip-build` | 同上，但跳过本地构建（复用已有 `.output`） |
 
 > 脚本默认读取项目根目录的 `.env.development`（不依赖当前工作目录）；生产环境可传参数指定：`node scripts/init-db.mjs .env.production`。
+
+## 生产部署
+
+本项目提供一键部署脚本 `scripts/deploy.mjs`（封装为 `npm run deploy`），从 `.env.production` 读取服务器连接信息，通过 **SSH 密码认证**（`SSH_PASSWORD`）登录服务器，自动完成环境初始化与发布。目标服务器：腾讯云广州（`134.175.143.160`，Ubuntu 26.04，已运行 GitLab CE）。
+
+### 前置条件
+
+1. `.env.production` 中除 `NUXT_*` 运行时配置外，还需包含 SSH 连接配置：
+
+   ```ini
+   SSH_SERVE=134.175.143.160
+   SSH_PORT=22
+   SSH_USER=ubuntu
+   SSH_PASSWORD="<登录密码>"
+   ```
+
+2. 服务器用户需具备 **免密 sudo** 权限（用于安装依赖、写 systemd 服务、绑定 80 端口）。
+3. 本地已安装 Node.js（构建用）与网络（上传与下载 Node 发行包）。
+
+### 一键部署
+
+```bash
+npm run deploy
+```
+
+脚本执行的完整流程：
+
+| 阶段 | 动作 |
+| --- | --- |
+| 1. 构建 | 本地 `nuxt build` 生成 `.output` |
+| 2. 跨平台加固 | 向 `.output` 注入 Linux 版 sharp 原生库（`@nuxt/image` 的 ipx 惰性加载 sharp；应用未使用图片优化，此步可选，失败仅告警） |
+| 3. 打包 | 将 `.output` + `server/db`（SQL）打包为 tar.gz，并生成 `rit.env`（仅 `NUXT_*` 运行时密钥，systemd 安全格式） |
+| 4. 上传解压 | SFTP 上传至 `/opt/rit-stock-platform` |
+| 5. 环境初始化（幂等） | 缺失时安装 Node.js 22（官方 tarball → `/opt/nodejs`）、PostgreSQL 18、Redis 8；设置 postgres 密码、建库、应用 schema + 迁移、种子默认超管 |
+| 6. 服务守护 | 写 `/etc/systemd/system/rit-stock.service`，`AmbientCapabilities=CAP_NET_BIND_SERVICE` 使非 root 用户可监听 80 端口，开机自启 |
+| 7. 启动 + 健康检查 | `systemctl restart` 后探测 `/api/health`、首页、RSA 公钥接口 |
+
+### 部署结果与验证
+
+- **访问地址**：`http://134.175.143.160`（80 端口）
+- **健康检查**：`curl http://134.175.143.160/api/health` → `{"status":"ok","db":"up","redis":"up","env":"prod"}`
+- **默认账号**：`13800000000` / `000000`（首次登录强制改密）
+
+### 常用运维命令（服务器上）
+
+```bash
+sudo systemctl status rit-stock     # 查看状态
+sudo systemctl restart rit-stock    # 重启
+sudo systemctl stop rit-stock       # 停止
+sudo journalctl -u rit-stock -f     # 实时日志
+```
+
+### 注意事项
+
+- **端口占用**：80 端口必须空闲；GitLab 占用 5003 端口，二者不冲突。若 80 被占用，需先释放或改用反向代理。
+- **权限**：绑定 80 端口依赖 `CAP_NET_BIND_SERVICE`（已在 systemd 中配置），勿以 root 直接运行 Node。
+- **环境变量**：运行时密钥经 `rit.env`（systemd `EnvironmentFile`）注入，仅含 `NUXT_*`，不含 `SSH_*`；`rit.env` 已 `chmod 600`。
+- **进程守护**：systemd `Restart=always` 保证崩溃自动拉起，`enable` 保证开机自启。
+- **内存**：服务器 2 核 3.6GB，GitLab 占用较高；若出现 OOM，可先 `sudo gitlab-ctl stop` 释放后再评估。
+- **安全组**：需在腾讯云控制台放行 80 端口入站（22、5003 已放行）。
 
 ## 开发环境备注
 

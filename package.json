@@ -10,7 +10,9 @@
     "postinstall": "nuxt prepare",
     "db:init": "node scripts/init-db.mjs",
     "db:migrate": "node scripts/migrate.mjs",
-    "db:setup": "node scripts/init-db.mjs && node scripts/migrate.mjs"
+    "db:setup": "node scripts/init-db.mjs && node scripts/migrate.mjs",
+    "deploy": "node scripts/deploy.mjs",
+    "deploy:skip-build": "node scripts/deploy.mjs --skip-build"
   },
   "dependencies": {
     "@element-plus/icons-vue": ">=0.2.6",
@@ -26,6 +28,8 @@
     "vue-router": "^5.3.1"
   },
   "devDependencies": {
-    "@types/pg": "^8.11.0"
+    "@types/pg": "^8.11.0",
+    "ssh2": "^1.17.0",
+    "tar": "^7.5.22"
   }
 }
