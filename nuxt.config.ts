@@ -97,6 +97,17 @@ export default defineNuxtConfig({
     // 上报防重放时间窗口（毫秒，默认 5 分钟）
     replayWindowMs: 300000,
 
+    // 策略查询缓存 TTL（秒）
+    strategyCache: {
+      metaTtl: 600, // 维度下拉（directs/periods/dates）缓存 10 分钟
+      listTtl: 120, // 列表结果缓存 2 分钟
+      lockTtl: 10 // 单飞锁超时 10 秒
+    },
+
+    // 登录会话 cookie 是否加 Secure 属性（仅 HTTPS 下应为 true）。
+    // 默认：生产构建为 true，开发为 false；HTTP 部署需在 .env 中设 NUXT_COOKIE_SECURE=false。
+    cookieSecure: process.env.NODE_ENV === 'production',
+
     public: {
       appName: '股票量化交易平台'
     }

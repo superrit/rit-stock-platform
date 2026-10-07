@@ -6,7 +6,15 @@ const COLS = [
   'hash', 'ud_str', 'stock_number', 'stock_name', 'next_index', 'direct',
   'price', 'tp', 'sl', 'pl', 'result', 'ratio', 'total', 'period',
   'tactic_resolve_time', 'bsp', 'jxp', 'calc_cha', 'must_eles', 'score_detail',
-  'analyze_score', 'report_ts'
+  'analyze_score', 'report_ts', 'resolve_date'
+]
+
+// 列表查询实际需要的列（排除 hash/ud_str/must_eles/report_ts/created_at/updated_at 等
+// 从未对外返回的重字段，减少网络与内存开销）
+const LIST_COLS = [
+  'stock_number', 'stock_name', 'next_index', 'direct', 'price', 'tp', 'sl', 'pl',
+  'result', 'ratio', 'total', 'period', 'tactic_resolve_time', 'bsp', 'jxp',
+  'calc_cha', 'score_detail', 'analyze_score'
 ]
 
 function num(v: unknown): number | null {
@@ -24,6 +32,19 @@ function str(v: unknown): string | null {
   if (v == null) return null
   const s = String(v)
   return s === '' ? null : s
+}
+
+// 计算「分析日期」（Asia/Shanghai，YYYY-MM-DD），与 DB 中 resolve_date 语义一致
+function resolveDateStr(v: unknown): string | null {
+  if (v == null || v === '') return null
+  const d = new Date(String(v))
+  if (Number.isNaN(d.getTime())) return null
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(d)
 }
 
 function toRow(item: Record<string, unknown>, reportTs: number): unknown[] {
@@ -49,7 +70,8 @@ function toRow(item: Record<string, unknown>, reportTs: number): unknown[] {
     str(item.mustEles),
     str(item.scoreDetail),
     num(item.analyzeScore),
-    reportTs
+    reportTs,
+    resolveDateStr(item.tacticResolveTime)
   ]
 }
 
@@ -126,7 +148,7 @@ export interface StrategyQuery {
 }
 
 // 字段裁剪：hash/udStr/mustEles 不对外返回；VIP/超管额外可见 scoreDetail/analyzeScore
-function toStrategyItem(row: Record<string, unknown>, role: Role): Record<string, unknown> {
+export function toStrategyItem(row: Record<string, unknown>, role: Role): Record<string, unknown> {
   const item: Record<string, unknown> = {
     stockNumber: row.stock_number,
     stockName: row.stock_name,
@@ -152,7 +174,13 @@ function toStrategyItem(row: Record<string, unknown>, role: Role): Record<string
   return item
 }
 
-export async function listReports(q: StrategyQuery, role: Role) {
+export interface ReportRowsResult {
+  rows: Record<string, unknown>[]
+  total: number
+}
+
+// 原始查询：按条件分页/排序返回列表列 + 总数（不含角色裁剪，供缓存层复用）
+export async function queryReportRows(q: StrategyQuery): Promise<ReportRowsResult> {
   const conditions: string[] = []
   const whereParams: unknown[] = []
 
@@ -172,12 +200,10 @@ export async function listReports(q: StrategyQuery, role: Role) {
     whereParams.push(q.period)
     conditions.push('period = $' + whereParams.length)
   }
-  // 分析时间：按中国时区(Asia/Shanghai)取日期，支持多选
+  // 分析时间：直接命中预计算日期列（可走索引），支持多选
   if (q.tacticResolveTimes && q.tacticResolveTimes.length > 0) {
     whereParams.push(q.tacticResolveTimes)
-    conditions.push(
-      "(tactic_resolve_time AT TIME ZONE 'Asia/Shanghai')::date = ANY($" + whereParams.length + '::date[])'
-    )
+    conditions.push('resolve_date = ANY($' + whereParams.length + '::date[])')
   }
 
   const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : ''
@@ -189,7 +215,7 @@ export async function listReports(q: StrategyQuery, role: Role) {
   const offsetIdx = whereParams.length + 2
 
   const rows = await query<Record<string, unknown>>(
-    'SELECT * FROM strategy_reports ' + where +
+    'SELECT ' + LIST_COLS.join(', ') + ' FROM strategy_reports ' + where +
     ' ORDER BY ' + sortCol + ' ' + sortDir + ' NULLS LAST' +
     ' LIMIT $' + limitIdx + ' OFFSET $' + offsetIdx,
     listParams
@@ -200,35 +226,31 @@ export async function listReports(q: StrategyQuery, role: Role) {
   )
   const total = Number(countRes[0]?.count ?? 0)
 
+  return { rows, total }
+}
+
+export interface StrategyMeta {
+  directs: string[]
+  periods: string[]
+  dates: string[]
+}
+
+// 元数据加载器（未缓存）：维度下拉可选值 + 分析日期可选值
+export async function fetchMetaRaw(): Promise<StrategyMeta> {
+  const [directs, periods, dates] = await Promise.all([
+    query<{ direct: string }>(
+      'SELECT DISTINCT direct FROM strategy_reports WHERE direct IS NOT NULL ORDER BY direct ASC'
+    ),
+    query<{ period: string }>(
+      'SELECT DISTINCT period FROM strategy_reports WHERE period IS NOT NULL ORDER BY period ASC'
+    ),
+    query<{ d: string }>(
+      'SELECT DISTINCT resolve_date::text AS d FROM strategy_reports WHERE resolve_date IS NOT NULL ORDER BY d ASC'
+    )
+  ])
   return {
-    records: rows.map((r) => toStrategyItem(r, role)),
-    total,
-    page: q.page,
-    pageSize: q.pageSize
+    directs: directs.map((r) => r.direct),
+    periods: periods.map((r) => r.period),
+    dates: dates.map((r) => r.d)
   }
-}
-
-// direct 字段可选值（用于筛选下拉）
-export async function listDirects(): Promise<string[]> {
-  const rows = await query<{ direct: string }>(
-    'SELECT DISTINCT direct FROM strategy_reports WHERE direct IS NOT NULL ORDER BY direct ASC'
-  )
-  return rows.map((r) => r.direct)
-}
-
-// period 字段可选值（用于周期筛选下拉）
-export async function listPeriods(): Promise<string[]> {
-  const rows = await query<{ period: string }>(
-    'SELECT DISTINCT period FROM strategy_reports WHERE period IS NOT NULL ORDER BY period ASC'
-  )
-  return rows.map((r) => r.period)
-}
-
-// 分析时间可选值（中国时区 yyyy-MM-dd，升序，供多选筛选）
-export async function listDates(): Promise<string[]> {
-  const rows = await query<{ d: string }>(
-    "SELECT DISTINCT to_char(tactic_resolve_time AT TIME ZONE 'Asia/Shanghai', 'YYYY-MM-DD') AS d " +
-      'FROM strategy_reports WHERE tactic_resolve_time IS NOT NULL ORDER BY d ASC'
-  )
-  return rows.map((r) => r.d)
 }

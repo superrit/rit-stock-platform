@@ -186,6 +186,7 @@ sudo journalctl -u rit-stock -f     # 实时日志
 - **端口占用**：80 端口必须空闲；GitLab 占用 5003 端口，二者不冲突。若 80 被占用，需先释放或改用反向代理。
 - **权限**：绑定 80 端口依赖 `CAP_NET_BIND_SERVICE`（已在 systemd 中配置），勿以 root 直接运行 Node。
 - **环境变量**：运行时密钥经 `rit.env`（systemd `EnvironmentFile`）注入，仅含 `NUXT_*`，不含 `SSH_*`；`rit.env` 已 `chmod 600`。
+- **Cookie Secure**：会话 cookie 默认在生产构建下带 `Secure` 属性（仅 HTTPS 可存储）。**纯 HTTP 部署必须在 `.env.production` 设 `NUXT_COOKIE_SECURE=false`**，否则浏览器会拒绝存储登录 cookie，导致「登录后仍停留在登录页」。上 HTTPS 后应改回 `true`。
 - **进程守护**：systemd `Restart=always` 保证崩溃自动拉起，`enable` 保证开机自启。
 - **内存**：服务器 2 核 3.6GB，GitLab 占用较高；若出现 OOM，可先 `sudo gitlab-ctl stop` 释放后再评估。
 - **安全组**：需在腾讯云控制台放行 80 端口入站（22、5003 已放行）。

@@ -275,6 +275,17 @@ sign = MD5( ts + JSON.stringify(data) + 32位盐值 )
 
 > `dates` 为表中分析时间（中国时区 `Asia/Shanghai`）的去重日期，升序；前端默认选中最后一个（最新）日期。
 
+**缓存与性能说明**：
+
+- 本接口对高频查询数据接入 Redis 缓存（cache-aside 读旁路）：
+  - 维度下拉（`directs/periods/dates`）缓存 `10 分钟`（`strategy:meta:{version}`）。
+  - 列表结果（`records + total`）缓存 `2 分钟`（`strategy:list:{version}:{md5}`）。
+- **失效策略**：策略上报（`POST /api/strategy/report`）成功后版本号 `+1`（`strategy:version`），使所有旧缓存键自动失效（O(1)，无需扫描删除），旧键由 TTL 自然回收。
+- **防穿透**：空结果同样缓存，避免不存在的筛选条件反复打到数据库。
+- **防击穿**：热点键过期瞬间以 `SET NX` 单飞锁保证只有一个请求重建。
+- **字段裁剪在缓存之后进行**：同一份原始缓存同时服务普通用户与 VIP/超管，读取时按角色裁剪字段，保证 `scoreDetail/analyzeScore` 不越界。
+- 数据库侧同步补建 `resolve_date` 预计算日期列与 `direct/period/analyze_score/组合/trgm` 索引，使日期筛选、排序与模糊搜索均可走索引。
+
 **字段可见性**：
 
 | 字段 | 普通用户 | VIP/超管 |

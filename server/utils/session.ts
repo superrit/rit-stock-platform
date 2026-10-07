@@ -16,7 +16,8 @@ export function setAuthCookie(event: H3Event, token: string): void {
     sameSite: 'lax',
     path: '/',
     maxAge: ttl,
-    secure: !import.meta.dev
+    // Secure 仅在 HTTPS 下生效；纯 HTTP 部署必须为 false，否则浏览器会拒绝存储 cookie
+    secure: getConfig().cookieSecure
   })
 }
 

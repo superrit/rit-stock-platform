@@ -14,6 +14,12 @@ export interface RedisConfig {
   db: number
 }
 
+export interface StrategyCacheConfig {
+  metaTtl: number // 维度下拉（directs/periods/dates）缓存秒数
+  listTtl: number // 列表结果缓存秒数
+  lockTtl: number // 单飞锁超时秒数
+}
+
 export interface AppConfig {
   db: DbConfig
   redis: RedisConfig
@@ -22,6 +28,8 @@ export interface AppConfig {
   rsaPrivateKey: string
   signSalt: string
   replayWindowMs: number
+  cookieSecure: boolean
+  strategyCache: StrategyCacheConfig
 }
 
 function requireValue(name: string, value: string): string {
@@ -29,6 +37,13 @@ function requireValue(name: string, value: string): string {
     throw new Error(`[config] 缺少必需配置项 ${name}，请在对应 .env 文件中设置`)
   }
   return value.trim()
+}
+
+// 兼容布尔与字符串（Nuxt 环境变量覆盖可能是 "true"/"false" 字符串）
+function parseBool(value: unknown, fallback: boolean): boolean {
+  if (typeof value === 'boolean') return value
+  if (typeof value === 'string') return value === 'true' || value === '1'
+  return fallback
 }
 
 export function getConfig(): AppConfig {
@@ -55,7 +70,13 @@ export function getConfig(): AppConfig {
     passwordSalt: requireValue('NUXT_PASSWORD_SALT', String(rc.passwordSalt || '')),
     rsaPrivateKey: requireValue('NUXT_RSA_PRIVATE_KEY', String(rc.rsaPrivateKey || '')),
     signSalt: requireValue('NUXT_SIGN_SALT', String(rc.signSalt || '')),
-    replayWindowMs: Number(rc.replayWindowMs ?? 300000)
+    replayWindowMs: Number(rc.replayWindowMs ?? 300000),
+    cookieSecure: parseBool(rc.cookieSecure, true),
+    strategyCache: {
+      metaTtl: Number(rc.strategyCache?.metaTtl ?? 600),
+      listTtl: Number(rc.strategyCache?.listTtl ?? 120),
+      lockTtl: Number(rc.strategyCache?.lockTtl ?? 10)
+    }
   }
 
   if (Number.isNaN(config.db.port) || config.db.port <= 0) {
