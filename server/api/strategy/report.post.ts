@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { getConfig } from '../../utils/config'
 import { bulkUpsertReports } from '../../utils/strategy-reports'
-import { bumpStrategyVersion } from '../../utils/strategy-cache'
+import { invalidateStrategyCache } from '../../utils/strategy-cache'
 import { logger } from '../../utils/logger'
 
 // POST /api/strategy/report —— 外部策略上报接口（MD5 签名 + 时间戳防重放）
@@ -50,9 +50,9 @@ export default defineEventHandler(async (event) => {
 
   const saved = await bulkUpsertReports(data, tsNum)
 
-  // 写库成功 → 失效策略查询缓存（版本号 +1，O(1)）。缓存失效失败不阻断上报。
-  await bumpStrategyVersion().catch((err) => {
-    logger.warn('策略缓存版本号更新失败', { error: String(err) })
+  // 写库成功 → 清掉策略查询缓存（列表版本号 +1；dates/periods/directs 直接 DEL）。失效失败不阻断上报。
+  await invalidateStrategyCache().catch((err) => {
+    logger.warn('策略缓存失效失败', { error: String(err) })
   })
 
   return { success: true, saved }

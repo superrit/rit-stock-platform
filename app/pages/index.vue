@@ -36,7 +36,8 @@ const page = ref(1)
 const pageSize = ref(20)
 const directs = ref<string[]>([])
 const periods = ref<string[]>([])
-const dates = ref<string[]>([])
+// 分析日期按周期分组：{ day: [...], week: [...] }（来自独立缓存接口）
+const datesByPeriod = ref<Record<string, string[]>>({})
 
 // 筛选条件（周期默认 day，分析时间默认选中最后上报时间）
 const filters = reactive({
@@ -46,6 +47,9 @@ const filters = reactive({
   period: 'day',
   dates: [] as string[]
 })
+
+// 当前周期对应的可选日期
+const currentDates = computed(() => datesByPeriod.value[filters.period] || [])
 
 // 周期下拉选项（确保 day 始终存在）
 const periodOptions = computed(() => Array.from(new Set(['day', ...periods.value])))
@@ -95,7 +99,8 @@ function applyDefaultFilters() {
   const d = defaultSort()
   sortBy.value = d.by
   sortOrder.value = d.order
-  filters.dates = dates.value.length ? [dates.value[dates.value.length - 1]] : []
+  const ds = currentDates.value
+  filters.dates = ds.length ? [ds[ds.length - 1]] : []
 }
 
 function buildQueryUrl() {
@@ -118,15 +123,11 @@ async function fetchData() {
     const data = await $fetch<{
       records: StrategyItem[]
       total: number
-      directs: string[]
-      periods: string[]
-      dates: string[]
+      page: number
+      pageSize: number
     }>(buildQueryUrl())
     records.value = data.records
     total.value = data.total
-    if (data.directs?.length) directs.value = data.directs
-    if (data.periods?.length) periods.value = data.periods
-    if (data.dates?.length) dates.value = data.dates
     expandedCards.value = new Set()
     return data
   } catch (err: any) {
@@ -137,19 +138,39 @@ async function fetchData() {
   }
 }
 
-// 首次进入：先拉可选日期，默认选中最新日期后带条件重新查询
-async function initialLoad() {
-  const data = await fetchData()
-  if (data?.dates?.length) {
-    dates.value = data.dates
-    applyDefaultFilters()
-    await fetchData()
+// 拉取维度下拉（dates/periods/directs 均为独立缓存接口）
+async function fetchMeta() {
+  try {
+    const [d, p, dir] = await Promise.all([
+      $fetch<Record<string, string[]>>('/api/strategy/dates'),
+      $fetch<{ periods: string[] }>('/api/strategy/periods'),
+      $fetch<{ directs: string[] }>('/api/strategy/directs')
+    ])
+    if (d && typeof d === 'object') datesByPeriod.value = d
+    if (p?.periods?.length) periods.value = p.periods
+    if (dir?.directs?.length) directs.value = dir.directs
+  } catch (err: any) {
+    ElMessage.error(err?.data?.message || '加载筛选项失败')
   }
+}
+
+// 首次进入：先拉维度下拉，默认选中最新日期后带条件查询
+async function initialLoad() {
+  await fetchMeta()
+  applyDefaultFilters()
+  await fetchData()
 }
 
 function onSearch() {
   page.value = 1
   fetchData()
+}
+
+// 切换周期：日期默认选中该周期最新一天，再查询
+function onPeriodChange() {
+  const ds = currentDates.value
+  filters.dates = ds.length ? [ds[ds.length - 1]] : []
+  onSearch()
 }
 
 function onReset() {
@@ -298,7 +319,7 @@ onMounted(initialLoad)
               </el-select>
             </el-form-item>
             <el-form-item label="周期">
-              <el-select v-model="filters.period" placeholder="全部" clearable style="width: 110px">
+              <el-select v-model="filters.period" placeholder="全部" clearable style="width: 110px" @change="onPeriodChange">
                 <el-option v-for="pd in periodOptions" :key="pd" :label="pd" :value="pd" />
               </el-select>
             </el-form-item>
@@ -312,7 +333,7 @@ onMounted(initialLoad)
                 clearable
                 style="width: 260px"
               >
-                <el-option v-for="d in dates" :key="d" :label="d" :value="d" />
+                <el-option v-for="d in currentDates" :key="d" :label="d" :value="d" />
               </el-select>
             </el-form-item>
             <el-form-item class="filter-actions">

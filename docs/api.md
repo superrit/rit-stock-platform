@@ -267,20 +267,18 @@ sign = MD5( ts + JSON.stringify(data) + 32位盐值 )
       "tacticResolveTime": "2024-01-02T16:00:00.000Z", "BSP": 9.5, "JXP": 9.4, "CalcCha": "{...}"
     }
   ],
-  "total": 6, "page": 1, "pageSize": 20,
-  "directs": ["1", "2"], "periods": ["30min", "60min", "day"],
-  "dates": ["2024-01-03", "2024-02-15", "2025-06-01"]
+  "total": 6, "page": 1, "pageSize": 20
 }
 ```
 
-> `dates` 为表中分析时间（中国时区 `Asia/Shanghai`）的去重日期，升序；前端默认选中最后一个（最新）日期。
+> 维度下拉（方向/周期/分析日期）已拆离为独立接口 `/api/strategy/directs`、`/api/strategy/periods`、`/api/strategy/dates`，本接口不再返回。
 
 **缓存与性能说明**：
 
 - 本接口对高频查询数据接入 Redis 缓存（cache-aside 读旁路）：
-  - 维度下拉（`directs/periods/dates`）缓存 `10 分钟`（`strategy:meta:{version}`）。
   - 列表结果（`records + total`）缓存 `2 分钟`（`strategy:list:{version}:{md5}`）。
-- **失效策略**：策略上报（`POST /api/strategy/report`）成功后版本号 `+1`（`strategy:version`），使所有旧缓存键自动失效（O(1)，无需扫描删除），旧键由 TTL 自然回收。
+  - 维度下拉见独立接口（缓存 `2 小时`）。
+- **失效策略**：策略上报（`POST /api/strategy/report`）成功后，列表缓存版本号 `+1`（`strategy:version`）自动失效；`dates/periods/directs` 缓存直接 `DEL` 清掉。
 - **防穿透**：空结果同样缓存，避免不存在的筛选条件反复打到数据库。
 - **防击穿**：热点键过期瞬间以 `SET NX` 单飞锁保证只有一个请求重建。
 - **字段裁剪在缓存之后进行**：同一份原始缓存同时服务普通用户与 VIP/超管，读取时按角色裁剪字段，保证 `scoreDetail/analyzeScore` 不越界。
@@ -296,6 +294,54 @@ sign = MD5( ts + JSON.stringify(data) + 32位盐值 )
 
 ---
 
+## 2.2 策略分析日期（按周期分组，登录用户）
+
+- **方法**：`GET`
+- **路径**：`/api/strategy/dates`
+- **鉴权**：登录用户
+- **缓存**：Redis 缓存 `2 小时`（键 `strategy:dates`），新策略上报时清掉。
+
+**响应示例**（key 为 `period`，值为该周期下的去重日期，升序）：
+
+```json
+{
+  "day": ["2024-01-03", "2024-02-15", "2025-06-01"],
+  "week": ["2024-01-05", "2024-02-16"]
+}
+```
+
+---
+
+## 2.3 策略周期可选值（登录用户）
+
+- **方法**：`GET`
+- **路径**：`/api/strategy/periods`
+- **鉴权**：登录用户
+- **缓存**：Redis 缓存 `2 小时`（键 `strategy:periods`），新策略上报时清掉。
+
+**响应示例**：
+
+```json
+{ "periods": ["day", "week"] }
+```
+
+---
+
+## 2.4 策略方向可选值（登录用户）
+
+- **方法**：`GET`
+- **路径**：`/api/strategy/directs`
+- **鉴权**：登录用户
+- **缓存**：Redis 缓存 `2 小时`（键 `strategy:directs`），新策略上报时清掉。
+
+**响应示例**：
+
+```json
+{ "directs": ["0", "1"] }
+```
+
+---
+
 ## 附：相关端点索引
 
 | 方法 | 路径 | 鉴权 | 说明 |
@@ -306,6 +352,9 @@ sign = MD5( ts + JSON.stringify(data) + 32位盐值 )
 | GET | /api/vip-records | 管理员 | VIP 操作记录分页查询 |
 | POST | /api/users/:id/vip | 管理员 | VIP 续期（枚举） |
 | GET | /api/strategy/reports | 登录用户 | 策略分页查询（按角色裁剪字段） |
+| GET | /api/strategy/dates | 登录用户 | 分析日期（按周期分组，缓存 2 小时） |
+| GET | /api/strategy/periods | 登录用户 | 周期可选值（缓存 2 小时） |
+| GET | /api/strategy/directs | 登录用户 | 方向可选值（缓存 2 小时） |
 | GET | /api/users | 管理员 | 用户列表 |
 | POST | /api/users | 管理员 | 新增用户 |
 | PATCH | /api/users/:id | 管理员 | 修改备注 |

@@ -73,7 +73,7 @@ export function getConfig(): AppConfig {
     replayWindowMs: Number(rc.replayWindowMs ?? 300000),
     cookieSecure: parseBool(rc.cookieSecure, true),
     strategyCache: {
-      metaTtl: Number(rc.strategyCache?.metaTtl ?? 600),
+      metaTtl: Number(rc.strategyCache?.metaTtl ?? 7200),
       listTtl: Number(rc.strategyCache?.listTtl ?? 120),
       lockTtl: Number(rc.strategyCache?.lockTtl ?? 10)
     }

@@ -5,21 +5,25 @@ import { cacheGetOrSet } from './cache'
 import type { Role } from './auth'
 import {
   queryReportRows,
-  fetchMetaRaw,
+  fetchDatesGroupedRaw,
+  fetchPeriodsRaw,
+  fetchDirectsRaw,
   toStrategyItem,
-  type StrategyQuery,
-  type StrategyMeta
+  type StrategyQuery
 } from './strategy-reports'
 
 // ============================================================
-// 策略查询缓存：generation-based 失效（版本号）+ cache-aside
-//
-// 失效策略：写库成功后调用 bumpStrategyVersion()，版本号 +1，
-//   使所有以旧版本号为前缀的缓存键「自动失效」（O(1)，无需扫描删除），
-//   旧键由各自 TTL 自然过期回收，避免脏读与内存泄漏。
+// 策略查询缓存
+//   - 列表结果：generation-based 失效（版本号），键 strategy:list:{version}:{md5}
+//   - 维度元数据（dates/periods/directs）：固定 key + 写库时 DEL 主动清掉，TTL 2 小时
 // ============================================================
 
 const VERSION_KEY = 'strategy:version'
+
+// 维度元数据缓存固定 key（写库时 DEL 清掉）
+const DATES_KEY = 'strategy:dates'
+const PERIODS_KEY = 'strategy:periods'
+const DIRECTS_KEY = 'strategy:directs'
 
 // 进程内版本号缓存（1 秒内复用，降低 Redis 往返；写库时立即失效）
 let memVersion: { value: number; at: number } | null = null
@@ -31,9 +35,13 @@ async function getVersion(): Promise<number> {
   return v
 }
 
-// 写库成功后调用：版本 +1，全部旧缓存键失效
-export async function bumpStrategyVersion(): Promise<void> {
-  await getRedis().incr(VERSION_KEY)
+// 写库成功后调用：失效全部策略查询缓存
+//   - INCR 版本号 → 列表缓存（strategy:list:{version}:*）自动失效
+//   - DEL 固定 key → dates/periods/directs 元数据缓存直接清掉
+export async function invalidateStrategyCache(): Promise<void> {
+  const redis = getRedis()
+  await redis.incr(VERSION_KEY)
+  await redis.del(DATES_KEY, PERIODS_KEY, DIRECTS_KEY)
   memVersion = null
 }
 
@@ -87,9 +95,20 @@ export async function cachedListReports(q: StrategyQuery, role: Role): Promise<R
   }
 }
 
-// 维度下拉（带缓存）：directs/periods/dates 变化频率低，TTL 更长
-export async function cachedStrategyMeta(): Promise<StrategyMeta> {
+// 分析日期（按 period 分组，缓存 2 小时）
+export async function cachedStrategyDates(): Promise<Record<string, string[]>> {
   const { meta, lock } = ttl()
-  const key = `strategy:meta:${await getVersion()}`
-  return cacheGetOrSet(key, fetchMetaRaw, { ttl: meta, lockTtl: lock })
+  return cacheGetOrSet(DATES_KEY, fetchDatesGroupedRaw, { ttl: meta, lockTtl: lock })
+}
+
+// 周期可选值（缓存 2 小时）
+export async function cachedStrategyPeriods(): Promise<string[]> {
+  const { meta, lock } = ttl()
+  return cacheGetOrSet(PERIODS_KEY, fetchPeriodsRaw, { ttl: meta, lockTtl: lock })
+}
+
+// 方向可选值（缓存 2 小时）
+export async function cachedStrategyDirects(): Promise<string[]> {
+  const { meta, lock } = ttl()
+  return cacheGetOrSet(DIRECTS_KEY, fetchDirectsRaw, { ttl: meta, lockTtl: lock })
 }

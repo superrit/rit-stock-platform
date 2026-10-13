@@ -36,7 +36,7 @@
 - VIP 续期枚举：`1month/3months/6months/1year`（前端不可自由上送时长），接口 `POST /api/users/:id/vip`。
 - 接口文档：`docs/api.md`。
 - 策略查询：`GET /api/strategy/reports`（登录即可，字段按角色裁剪：普通用户 16 字段，VIP/超管多 scoreDetail/analyzeScore；hash/udStr/mustEles 不返回），页面为首页 `/`（原 dashboard 已移除）。
-- 策略查询缓存（2026-10-07）：`server/utils/cache.ts`（通用 cache-aside：空值缓存防穿透 + `SET NX` 单飞锁防击穿）+ `server/utils/strategy-cache.ts`（generation-based 失效：写库 `INCR strategy:version`，键 `strategy:list:{version}:{md5}` / `strategy:meta:{version}`）。TTL 配置在 runtimeConfig `strategyCache`（meta 600s/list 120s/lock 10s）。`strategy_reports` 表约 264 万行，已加 `resolve_date` 预计算列（写库 JS 计算上海日期）+ 多列/组合/pg_trgm 索引（迁移 005）。
+- 策略查询缓存（2026-10-13 更新）：`server/utils/cache.ts`（通用 cache-aside：空值缓存防穿透 + `SET NX` 单飞锁防击穿）+ `server/utils/strategy-cache.ts`。列表缓存 `strategy:list:{version}:{md5}`（version 失效）；维度下拉独立接口 `GET /api/strategy/dates|periods|directs`，固定 key `strategy:dates|periods|directs`，TTL 7200s（2h），写库 `invalidateStrategyCache()`（INCR version + DEL 三个 meta key）。TTL 在 runtimeConfig `strategyCache`（meta 7200/list 120/lock 10）。dates 按 period 分组返回 `{day:[...],week:[...]}`。`strategy_reports` 表约 264 万行，有 `resolve_date` 预计算列（写库 JS 计算上海日期）+ 多列/组合/pg_trgm 索引（迁移 005）。
 - Logo/Favicon：`public/logo.png`(512) + `public/favicon.ico`(多尺寸)；再生成用 `node scripts/build-logo.mjs <源图>`。
 
 ## 生产部署（2026-10-07）

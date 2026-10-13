@@ -229,28 +229,33 @@ export async function queryReportRows(q: StrategyQuery): Promise<ReportRowsResul
   return { rows, total }
 }
 
-export interface StrategyMeta {
-  directs: string[]
-  periods: string[]
-  dates: string[]
+// ============ 维度元数据加载器（未缓存，供独立接口 + 缓存层复用） ============
+
+// 分析日期：按 period 分组，如 { day: ['2024-01-03', ...], week: [...] }（动态 key）
+export async function fetchDatesGroupedRaw(): Promise<Record<string, string[]>> {
+  const rows = await query<{ period: string; d: string }>(
+    'SELECT DISTINCT period, resolve_date::text AS d FROM strategy_reports ' +
+      'WHERE period IS NOT NULL AND resolve_date IS NOT NULL ORDER BY period ASC, d ASC'
+  )
+  const grouped: Record<string, string[]> = {}
+  for (const r of rows) {
+    ;(grouped[r.period] ??= []).push(r.d)
+  }
+  return grouped
 }
 
-// 元数据加载器（未缓存）：维度下拉可选值 + 分析日期可选值
-export async function fetchMetaRaw(): Promise<StrategyMeta> {
-  const [directs, periods, dates] = await Promise.all([
-    query<{ direct: string }>(
-      'SELECT DISTINCT direct FROM strategy_reports WHERE direct IS NOT NULL ORDER BY direct ASC'
-    ),
-    query<{ period: string }>(
-      'SELECT DISTINCT period FROM strategy_reports WHERE period IS NOT NULL ORDER BY period ASC'
-    ),
-    query<{ d: string }>(
-      'SELECT DISTINCT resolve_date::text AS d FROM strategy_reports WHERE resolve_date IS NOT NULL ORDER BY d ASC'
-    )
-  ])
-  return {
-    directs: directs.map((r) => r.direct),
-    periods: periods.map((r) => r.period),
-    dates: dates.map((r) => r.d)
-  }
+// 周期可选值（period）
+export async function fetchPeriodsRaw(): Promise<string[]> {
+  const rows = await query<{ period: string }>(
+    'SELECT DISTINCT period FROM strategy_reports WHERE period IS NOT NULL ORDER BY period ASC'
+  )
+  return rows.map((r) => r.period)
+}
+
+// 方向可选值（direct）
+export async function fetchDirectsRaw(): Promise<string[]> {
+  const rows = await query<{ direct: string }>(
+    'SELECT DISTINCT direct FROM strategy_reports WHERE direct IS NOT NULL ORDER BY direct ASC'
+  )
+  return rows.map((r) => r.direct)
 }

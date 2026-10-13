@@ -99,7 +99,7 @@ export default defineNuxtConfig({
 
     // 策略查询缓存 TTL（秒）
     strategyCache: {
-      metaTtl: 600, // 维度下拉（directs/periods/dates）缓存 10 分钟
+      metaTtl: 7200, // 维度下拉（dates/periods/directs）缓存 2 小时
       listTtl: 120, // 列表结果缓存 2 分钟
       lockTtl: 10 // 单飞锁超时 10 秒
     },
