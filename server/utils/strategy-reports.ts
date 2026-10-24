@@ -177,6 +177,8 @@ export function toStrategyItem(row: Record<string, unknown>, role: Role): Record
 export interface ReportRowsResult {
   rows: Record<string, unknown>[]
   total: number
+  buy: number
+  sell: number
 }
 
 // 原始查询：按条件分页/排序返回列表列 + 总数（不含角色裁剪，供缓存层复用）
@@ -220,13 +222,18 @@ export async function queryReportRows(q: StrategyQuery): Promise<ReportRowsResul
     ' LIMIT $' + limitIdx + ' OFFSET $' + offsetIdx,
     listParams
   )
-  const countRes = await query<{ count: string }>(
-    'SELECT COUNT(*) AS count FROM strategy_reports ' + where,
+  const countRes = await query<{ count: string; buy: string; sell: string }>(
+    'SELECT COUNT(*) AS count, ' +
+      "COUNT(*) FILTER (WHERE direct = '1') AS buy, " +
+      "COUNT(*) FILTER (WHERE direct = '0') AS sell " +
+      'FROM strategy_reports ' + where,
     whereParams
   )
   const total = Number(countRes[0]?.count ?? 0)
+  const buy = Number(countRes[0]?.buy ?? 0)
+  const sell = Number(countRes[0]?.sell ?? 0)
 
-  return { rows, total }
+  return { rows, total, buy, sell }
 }
 
 // ============ 维度元数据加载器（未缓存，供独立接口 + 缓存层复用） ============

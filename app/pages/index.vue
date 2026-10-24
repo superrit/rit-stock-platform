@@ -36,6 +36,8 @@ const records = ref<StrategyItem[]>([])
 const total = ref(0)
 const page = ref(1)
 const pageSize = ref(20)
+// 当前筛选条件（不含分页）下的买卖策略统计（来自后端聚合）
+const stats = ref({ buy: 0, sell: 0, buyRatio: 0, sellRatio: 0 })
 const directs = ref<string[]>([])
 const periods = ref<string[]>([])
 // 分析日期按周期分组：{ day: [...], week: [...] }（来自独立缓存接口）
@@ -127,9 +129,11 @@ async function fetchData() {
       total: number
       page: number
       pageSize: number
+      stats?: { buy: number; sell: number; buyRatio: number; sellRatio: number }
     }>(buildQueryUrl())
     records.value = data.records
     total.value = data.total
+    if (data.stats) stats.value = data.stats
     expandedCards.value = new Set()
     return data
   } catch (err: any) {
@@ -241,19 +245,6 @@ const activeDateText = computed(() =>
   filters.dates.length ? filters.dates.join(' / ') : '全部时间'
 )
 
-// 当页统计：帮助快速把握方向分布
-const stats = computed(() => {
-  const buy = records.value.filter((r) => String(r.direct) === '1').length
-  const sell = records.value.filter((r) => String(r.direct) === '0').length
-  const scores = records.value
-    .map((r) => r.analyzeScore)
-    .filter((v): v is number => typeof v === 'number')
-  const avg = scores.length
-    ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 100) / 100
-    : null
-  return { buy, sell, avg }
-})
-
 // 分析时间统一显示为 yyyy-MM-dd
 const fmtDate = (s: string | null | Date | undefined) => {
   if (!s) return '-'
@@ -296,17 +287,17 @@ onMounted(initialLoad)
   <div class="page">
     <AppHeader />
     <main class="content">
-      <!-- 统计概览：一眼掌握方向分布 -->
-      <section class="stats-bar" aria-label="当页统计">
+      <!-- 统计概览：当前筛选条件下的买卖策略数量与比例 -->
+      <section class="stats-bar" aria-label="方向统计">
         <div class="stat-card stat-buy">
-          <span class="stat-label"><el-icon><Upload /></el-icon>买入信号</span>
+          <span class="stat-label"><el-icon><Upload /></el-icon>买入策略</span>
           <span class="stat-value tabular-nums">{{ stats.buy }}</span>
-          <span class="stat-sub">红色 ▲</span>
+          <span class="stat-sub">占比 {{ stats.buyRatio.toFixed(1) }}%</span>
         </div>
         <div class="stat-card stat-sell">
-          <span class="stat-label"><el-icon><Download /></el-icon>卖出信号</span>
+          <span class="stat-label"><el-icon><Download /></el-icon>卖出策略</span>
           <span class="stat-value tabular-nums">{{ stats.sell }}</span>
-          <span class="stat-sub">绿色 ▼</span>
+          <span class="stat-sub">占比 {{ stats.sellRatio.toFixed(1) }}%</span>
         </div>
  
         <div class="stat-card stat-date">

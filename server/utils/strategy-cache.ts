@@ -72,14 +72,22 @@ function listFingerprint(q: StrategyQuery): string {
   return createHash('md5').update(canonical, 'utf8').digest('hex')
 }
 
+export interface ReportStats {
+  buy: number
+  sell: number
+  buyRatio: number // 百分比 0-100，保留 2 位小数
+  sellRatio: number
+}
+
 export interface ReportListResult {
   records: Record<string, unknown>[]
   total: number
   page: number
   pageSize: number
+  stats: ReportStats
 }
 
-// 列表查询（带缓存）：缓存「原始行 + 总数」，读取时按角色裁剪字段
+// 列表查询（带缓存）：缓存「原始行 + 总数 + 买卖统计」，读取时按角色裁剪字段
 // （同一份缓存同时服务普通用户与 VIP/超管，字段裁剪保证不出界）
 export async function cachedListReports(q: StrategyQuery, role: Role): Promise<ReportListResult> {
   const { list, lock } = ttl()
@@ -87,11 +95,17 @@ export async function cachedListReports(q: StrategyQuery, role: Role): Promise<R
 
   const raw = await cacheGetOrSet(key, () => queryReportRows(q), { ttl: list, lockTtl: lock })
 
+  const total = raw.total
+  const buy = raw.buy
+  const sell = raw.sell
+  const toRatio = (n: number) => (total > 0 ? Math.round((n / total) * 10000) / 100 : 0)
+
   return {
     records: raw.rows.map((r) => toStrategyItem(r, role)),
-    total: raw.total,
+    total,
     page: q.page,
-    pageSize: q.pageSize
+    pageSize: q.pageSize,
+    stats: { buy, sell, buyRatio: toRatio(buy), sellRatio: toRatio(sell) }
   }
 }
 
