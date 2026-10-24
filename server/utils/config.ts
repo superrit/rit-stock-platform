@@ -30,6 +30,7 @@ export interface AppConfig {
   replayWindowMs: number
   cookieSecure: boolean
   strategyCache: StrategyCacheConfig
+  rateLimitPerMinute: number // 接口防刷：每 IP 每分钟最大 API 请求数（0 或负数表示禁用）
 }
 
 function requireValue(name: string, value: string): string {
@@ -76,7 +77,8 @@ export function getConfig(): AppConfig {
       metaTtl: Number(rc.strategyCache?.metaTtl ?? 7200),
       listTtl: Number(rc.strategyCache?.listTtl ?? 120),
       lockTtl: Number(rc.strategyCache?.lockTtl ?? 10)
-    }
+    },
+    rateLimitPerMinute: Number(rc.rateLimitPerMinute ?? 600)
   }
 
   if (Number.isNaN(config.db.port) || config.db.port <= 0) {

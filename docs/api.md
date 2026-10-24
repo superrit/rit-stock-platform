@@ -9,6 +9,7 @@
   { "error": true, "statusCode": 400, "message": "错误描述" }
   ```
 - **鉴权方式**：需要登录态的接口，令牌存于 httpOnly cookie `rit_token`（登录后自动携带）；也可通过请求头 `Authorization: Bearer <token>` 传递。
+- **接口防刷（限流）**：所有 `/api/*` 接口按 IP 限流，每个 IP 每分钟最多 `600` 次（可通过 `NUXT_RATE_LIMIT_PER_MINUTE` 调整，0 表示禁用）。超过限制返回 `429`「请求过于频繁，请稍后再试」。
 
 ---
 
@@ -342,6 +343,35 @@ sign = MD5( ts + JSON.stringify(data) + 32位盐值 )
 
 ---
 
+## 2.5 清空全部策略（仅超级管理员）
+
+清空 `strategy_reports` 全部分析策略数据（不可恢复），并失效策略查询缓存。**仅超级管理员可用，且需输入本人登录密码二次确认。**
+
+- **方法**：`DELETE`
+- **路径**：`/api/strategy/reports`
+- **鉴权**：`super_admin`
+
+**请求体**：
+
+```json
+{ "password": "管理员的登录密码" }
+```
+
+**校验规则**：
+
+1. 非超级管理员 → `403 无权限`。
+2. 缺少密码 → `400 请输入密码`。
+3. 密码错误（与当前管理员登录密码不符）→ `401 密码错误，无法清空`。
+4. 校验通过 → 清空全部策略数据，并失效策略查询缓存。
+
+**响应示例**：
+
+```json
+{ "success": true, "message": "已清空全部策略" }
+```
+
+---
+
 ## 附：相关端点索引
 
 | 方法 | 路径 | 鉴权 | 说明 |
@@ -352,6 +382,7 @@ sign = MD5( ts + JSON.stringify(data) + 32位盐值 )
 | GET | /api/vip-records | 管理员 | VIP 操作记录分页查询 |
 | POST | /api/users/:id/vip | 管理员 | VIP 续期（枚举） |
 | GET | /api/strategy/reports | 登录用户 | 策略分页查询（按角色裁剪字段） |
+| DELETE | /api/strategy/reports | 管理员 | 清空全部策略（需密码确认） |
 | GET | /api/strategy/dates | 登录用户 | 分析日期（按周期分组，缓存 2 小时） |
 | GET | /api/strategy/periods | 登录用户 | 周期可选值（缓存 2 小时） |
 | GET | /api/strategy/directs | 登录用户 | 方向可选值（缓存 2 小时） |

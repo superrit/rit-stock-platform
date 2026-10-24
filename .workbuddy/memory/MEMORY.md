@@ -37,6 +37,8 @@
 - 接口文档：`docs/api.md`。
 - 策略查询：`GET /api/strategy/reports`（登录即可，字段按角色裁剪：普通用户 16 字段，VIP/超管多 scoreDetail/analyzeScore；hash/udStr/mustEles 不返回），页面为首页 `/`（原 dashboard 已移除）。
 - 策略查询缓存（2026-10-13 更新）：`server/utils/cache.ts`（通用 cache-aside：空值缓存防穿透 + `SET NX` 单飞锁防击穿）+ `server/utils/strategy-cache.ts`。列表缓存 `strategy:list:{version}:{md5}`（version 失效）；维度下拉独立接口 `GET /api/strategy/dates|periods|directs`，固定 key `strategy:dates|periods|directs`，TTL 7200s（2h），写库 `invalidateStrategyCache()`（INCR version + DEL 三个 meta key）。TTL 在 runtimeConfig `strategyCache`（meta 7200/list 120/lock 10）。dates 按 period 分组返回 `{day:[...],week:[...]}`。`strategy_reports` 表约 264 万行，有 `resolve_date` 预计算列（写库 JS 计算上海日期）+ 多列/组合/pg_trgm 索引（迁移 005）。
+- 清空全部策略（2026-10-24）：`DELETE /api/strategy/reports`（仅 super_admin，`requireAdmin`；body 传 `password`，`verifyPassword` 校验本人密码后 `TRUNCATE strategy_reports` + `invalidateStrategyCache`）。前端首页筛选栏「清空全部」danger 按钮（`v-if="isAdmin"`），`ElMessageBox.prompt` 密码确认。开发库 264 万行/3.8GB，冒烟用 RENAME 换表法无损验证。
+- 接口防刷（2026-10-24）：`server/middleware/rate-limit.ts` 全局限流，仅 `/api/*` 生效，按 IP（`getRequestIP` xForwardedFor:true）每 60s 最多 `rateLimitPerMinute`（默认 600，0 禁用），Redis Lua `INCR`+`EXPIRE` 原子计数，超限 429，Redis 异常 fail-open。runtimeConfig `rateLimitPerMinute`。
 - Logo/Favicon：`public/logo.png`(512) + `public/favicon.ico`(多尺寸)；再生成用 `node scripts/build-logo.mjs <源图>`。
 
 ## 生产部署（2026-10-07）

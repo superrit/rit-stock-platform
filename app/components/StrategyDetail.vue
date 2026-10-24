@@ -73,10 +73,6 @@ const fmtNum = (v: number | null | undefined) => (v == null ? '-' : v)
         <span class="dv tabular-nums">{{ fmtNum(row.JXP) }}</span>
       </div>
       <div class="detail-item">
-        <span class="dl">结果订单数</span>
-        <span class="dv tabular-nums">{{ fmtNum(row.total) }}</span>
-      </div>
-      <div class="detail-item">
         <span class="dl">平保 (PL)</span>
         <span class="dv tabular-nums">{{ fmtNum(row.pl) }}</span>
       </div>

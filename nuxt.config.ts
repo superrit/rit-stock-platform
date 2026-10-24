@@ -104,6 +104,9 @@ export default defineNuxtConfig({
       lockTtl: 10 // 单飞锁超时 10 秒
     },
 
+    // 接口防刷：每个 IP 每分钟最大 API 请求数（仅 /api/* 生效）
+    rateLimitPerMinute: 600,
+
     // 登录会话 cookie 是否加 Secure 属性（仅 HTTPS 下应为 true）。
     // 默认：生产构建为 true，开发为 false；HTTP 部署需在 .env 中设 NUXT_COOKIE_SECURE=false。
     cookieSecure: process.env.NODE_ENV === 'production',

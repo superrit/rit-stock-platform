@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ElMessage } from 'element-plus'
-import { Search, RefreshLeft, TrendCharts, DataAnalysis, Upload, Download } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search, RefreshLeft, TrendCharts, DataAnalysis, Upload, Download, Delete } from '@element-plus/icons-vue'
 
 definePageMeta({ middleware: 'auth', layout: 'default' })
 
@@ -28,6 +28,8 @@ interface StrategyItem {
 const { user } = useAuth()
 // 普通用户只能看基础字段，VIP/超管可见全部
 const canSeeAll = computed(() => user.value?.role !== 'user')
+// 是否超级管理员（仅其可清空全部策略）
+const isAdmin = computed(() => user.value?.role === 'super_admin')
 
 const loading = ref(false)
 const records = ref<StrategyItem[]>([])
@@ -182,6 +184,38 @@ function onReset() {
   applyDefaultFilters()
   page.value = 1
   fetchData()
+}
+
+// 清空全部策略（仅超级管理员，需输入本人登录密码二次确认）
+async function onClearAll() {
+  try {
+    const { value } = await ElMessageBox.prompt(
+      '此操作将清空全部策略数据且不可恢复，请输入您的登录密码确认',
+      '清空全部策略',
+      {
+        confirmButtonText: '确认清空',
+        cancelButtonText: '取消',
+        inputType: 'password',
+        inputPlaceholder: '请输入登录密码',
+        inputValidator: (v: string) => (v && v.trim() ? true : '密码不能为空'),
+        type: 'warning'
+      }
+    )
+    await $fetch('/api/strategy/reports', {
+      method: 'DELETE',
+      body: { password: value }
+    })
+    ElMessage.success('已清空全部策略')
+    // 清空后刷新维度下拉与列表
+    await fetchMeta()
+    applyDefaultFilters()
+    page.value = 1
+    await fetchData()
+  } catch (err: any) {
+    // 取消 / 关闭弹窗则静默
+    if (err === 'cancel' || err === 'close') return
+    ElMessage.error(err?.data?.message || '清空失败')
+  }
 }
 
 function onSortChange({ prop, order }: { prop: string; order: string | null }) {
@@ -339,6 +373,7 @@ onMounted(initialLoad)
             <el-form-item class="filter-actions">
               <el-button type="primary" :icon="Search" @click="onSearch">查询</el-button>
               <el-button :icon="RefreshLeft" @click="onReset">重置</el-button>
+              <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="onClearAll">清空全部</el-button>
             </el-form-item>
           </el-form>
           <div v-if="!canSeeAll" class="role-hint">普通用户：仅展示基础字段，升级 VIP 可查看分析分数</div>
